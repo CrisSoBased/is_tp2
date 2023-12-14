@@ -1,21 +1,20 @@
 import xml.etree.ElementTree as ET
+from .player import Player
 
-from player import Player
-
-
-class Team:
+class Club:
 
     def __init__(self, name: str):
-        Team.counter += 1
-        self._id = Team.counter
+        Club.counter += 1
+        self._id = Club.counter
         self._name = name
         self._players = []
+        self.players_by_country = {}
 
     def add_player(self, player: Player):
         self._players.append(player)
 
     def to_xml(self):
-        el = ET.Element("Team")
+        el = ET.Element("Club")
         el.set("id", str(self._id))
         el.set("name", self._name)
 
@@ -31,4 +30,4 @@ class Team:
         return f"{self._name} ({self._id})"
 
 
-Team.counter = 0
+Club.counter = 0

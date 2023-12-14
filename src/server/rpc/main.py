@@ -4,6 +4,11 @@ from xmlrpc.server import SimpleXMLRPCRequestHandler
 
 from functions.string_length import string_length
 from functions.string_reverse import string_reverse
+from functions.queries import Queries
+from functions.string_length import string_length
+from functions.string_reverse import string_reverse
+
+
 
 PORT = int(sys.argv[1]) if len(sys.argv) >= 2 else 9000
 
@@ -11,7 +16,7 @@ if __name__ == "__main__":
     class RequestHandler(SimpleXMLRPCRequestHandler):
         rpc_paths = ('/RPC2',)
 
-    with SimpleXMLRPCServer(('localhost', PORT), requestHandler=RequestHandler) as server:
+    with SimpleXMLRPCServer(('0.0.0.0', PORT), requestHandler=RequestHandler) as server:
         server.register_introspection_functions()
 
         def signal_handler(signum, frame):
@@ -22,6 +27,9 @@ if __name__ == "__main__":
             print("exiting, gracefully")
             sys.exit(0)
 
+
+        querie = Queries()    
+
         # signals
         signal.signal(signal.SIGTERM, signal_handler)
         signal.signal(signal.SIGHUP, signal_handler)
@@ -30,6 +38,11 @@ if __name__ == "__main__":
         # register both functions
         server.register_function(string_reverse)
         server.register_function(string_length)
+        server.register_function(querie.fetch_all_players_by_country)
+        server.register_function(querie.fetch_all_players_CM_from_france)
+        server.register_function(querie.fetch_clubs)
+        server.register_function(querie.fetch_all_players_from_portugal)
+
 
         # start the server
         print(f"Starting the RPC Server in port {PORT}...")

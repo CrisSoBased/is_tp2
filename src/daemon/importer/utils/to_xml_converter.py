@@ -13,6 +13,19 @@ class CSVtoXMLConverter:
     def __init__(self, path):
         self._reader = CSVReader(path)
 
+    def get_data(self, country):
+
+        address = country
+        url = 'https://nominatim.openstreetmap.org/search/' + urllib.parse.quote(address) + '?format=json'
+
+        coordinates = requests.get(url).json()
+
+        return [
+            coordinates[0]["lat"],
+            coordinates[0]["lon"]
+        ]
+
+
     def to_xml(self):
         # read countries
         countries = self._reader.read_entities(

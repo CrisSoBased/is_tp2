@@ -14,6 +14,9 @@ class Country:
         el.set("name", self._name)
         return el
 
+    def get_name(self):
+        return self._name
+
     def get_id(self):
         return self._id
 

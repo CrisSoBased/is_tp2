@@ -10,12 +10,80 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Teacher {
-  name       String   @id
-  city       String
+model Player{
+  id String @id @default(uuid())
+  name String
+  position String
+  Age  Int
+  Overall Int
+  Pace Int
+  Shooting Int
+  Passing Int
+  Dribbling Int
+  Defending Int
+  Physicality Int
+  Acceleration Int
+  Sprint Int
+  Positioning Int
+  Finishing Int
+  Shot Int
+  Long Int
+  Volleys Int
+  Penalties Int
+  Vision Int
+  Crossing Int
+  Free Int
+  Curve Int
+  Agility Int
+  Balance Int
+  Reactions Int
+  Ball Int
+  Composure Int
+  Interceptions Int
+  Heading Int
+  Def Int
+  Standing Int
+  Sliding Int
+  Jumping Int
+  Stamina Int
+  Strength Int
+  Aggression Int
+  Att_work_rate String
+  Def_work_rate String
+  Preferred_foot String
+  Weak_foot Int
+  Skill_moves Int
+  URL String
+  Gender String
+  GK Int
+  nation Nation @relation(fields: [nationId], references: [id])
+  nationId Int
+  club Club @relation(fields: [clubId], references: [id])
+  clubId Int
   createdOn  DateTime @default(now()) @map("created_on")
   updatedOn  DateTime @updatedAt @map("updated_on")
 
-  @@map("teachers")
+  @@map("players")
 }
+
+model Club{
+  id String @id @default(uuid())
+  name String
+  players Player[]
+  createdOn  DateTime @default(now()) @map("created_on")
+  updatedOn  DateTime @updatedAt @map("updated_on")
+
+  @@map("clubs")
+}
+
+model Nation{
+  id String @id @default(uuid())
+  name String
+  players Player[]
+  createdOn  DateTime @default(now()) @map("created_on")
+  updatedOn  DateTime @updatedAt @map("updated_on")
+
+  @@map("nations")
+}
+
 

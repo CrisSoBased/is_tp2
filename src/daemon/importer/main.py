@@ -5,8 +5,10 @@ import uuid
 import os
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler, FileCreatedEvent
-
+from utils.db_access import DBAccess
+from pathlib import Path
 from utils.to_xml_converter import CSVtoXMLConverter
+from utils.importer import importFile
 
 def get_csv_files_in_input_folder():
     return [os.path.join(dp, f) for dp, dn, filenames in os.walk(CSV_INPUT_PATH) for f in filenames if
@@ -47,11 +49,29 @@ class CSVHandler(FileSystemEventHandler):
         convert_csv_to_xml(csv_path, xml_path)
         print(f"new xml file generated: '{xml_path}'")
 
+        # get the file size
+        file_size = Path(csv_path).stat().st_size
+        # import the document to the db
+        db_access = DBAccess()
+        db_access.convert_document(csv_path, xml_path, file_size)
         # !TODO: we should store the XML document into the imported_documents table
+        #open the file to send the xml data
+        with open(xml_path,encoding='latin-1') as file:
+            data = file.read()
+            file.close()
+
+        # import the file into the db
+        db_access.import_xml_document(xml_path, data)
 
     async def get_converted_files(self):
+        csv_files = []
         # !TODO: you should retrieve from the database the files that were already converted before
-        return []
+        db_access = DBAccess()
+        files = db_access.get_converted_files()
+
+        for file in files:
+            csv_files.append(file)
+        return csv_files
 
     def on_created(self, event):
         if not event.is_directory and event.src_path.endswith(".csv"):

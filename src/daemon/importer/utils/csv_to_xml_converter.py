@@ -100,7 +100,6 @@ class CSVtoXMLConverter:
         root_el = ET.Element("Football")
 
         clubs_el = ET.Element("Clubs")
-        
         for club in clubs.values():
             club_el = ET.SubElement(clubs_el, "Club", name=club._name)
             countries_el = ET.SubElement(club_el, "Countries")

@@ -8,7 +8,7 @@ class Club:
         self._id = Club.counter
         self._name = name
         self._players = []
-        self.players_by_country = {}
+        self.players_by_nation = {}
 
     def add_player(self, player: Player):
         self._players.append(player)

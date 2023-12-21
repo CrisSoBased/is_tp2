@@ -8,7 +8,6 @@ from watchdog.events import FileSystemEventHandler, FileCreatedEvent
 from utils.db_access import DBAccess
 from pathlib import Path
 from utils.csv_to_xml_converter import CSVtoXMLConverter
-from utils.importer import importFile
 
 def get_csv_files_in_input_folder():
     return [os.path.join(dp, f) for dp, dn, filenames in os.walk(CSV_INPUT_PATH) for f in filenames if

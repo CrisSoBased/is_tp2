@@ -6,7 +6,7 @@ from utils.reader import CSVReader
 from entities.nation import Nation
 from entities.club import Club
 from entities.player import Player
-from entities.country import Country
+from entities.nation import Nation
 from lxml import etree
 
 class CSVtoXMLConverter:
@@ -16,7 +16,7 @@ class CSVtoXMLConverter:
 
     def to_xml(self):
         # read countries
-        countries = self._reader.read_entities(
+        nations = self._reader.read_entities(
             attr="Nation",
             builder=lambda row: Nation(row["Nation"])
         )
@@ -32,19 +32,19 @@ class CSVtoXMLConverter:
             # add the player to the appropriate team
             #clubs[row["Club"]].add_player(player)
             club = clubs[row["Club"]]
-            country = countries[row["Nation"]]
+            nation = nations[row["Nation"]]
 
-            if country not in club.players_by_country:
-                club.players_by_country[country] = []
+            if nation not in club.players_by_nation:
+                club.players_by_nation[nation] = []
 
-            club.players_by_country[country].append(player)
+            club.players_by_nation[nation].append(player)
 
         self._reader.read_entities(
             attr="Name",
             builder=lambda row: Player(
                 name=row["Name"],
                 age=row["Age"],
-                country=countries[row["Nation"]],
+                country=nations[row["Nation"]],
                 club=clubs[row["Club"]],
                 position=row["Position"],
                 overall=row["Overall"],
@@ -93,20 +93,20 @@ class CSVtoXMLConverter:
         )
 
         # generate the final xml
-        for country in countries.values():
-            coordinates = country.get_geoloc(country.get_name())
-            country.set_geoloc(coordinates[0], coordinates[1])
+        for nation in nations.values():
+            coordinates = nation.get_geoloc(nation.get_name())
+            nation.set_geoloc(coordinates[0], coordinates[1])
                         
         root_el = ET.Element("Football")
 
         clubs_el = ET.Element("Clubs")
         for club in clubs.values():
             club_el = ET.SubElement(clubs_el, "Club", name=club._name)
-            countries_el = ET.SubElement(club_el, "Countries")
+            nations_el = ET.SubElement(club_el, "Nations")
 
-            for country, players in club.players_by_country.items():
-                country_el = ET.SubElement(countries_el, "Country", name=country.get_name(), Coordenadas=f"{country._lat}, {country._lon}")
-                players_el = ET.SubElement(country_el, "Players")
+            for nation, players in club.players_by_nation.items():
+                nations_el = ET.SubElement(nations_el, "Nation", name=nation.get_name(), Coordenadas=f"{nation._lat}, {nation._lon}")
+                players_el = ET.SubElement(nations_el, "Players")
 
                 for player in players:
                     players_el.append(player.to_xml())
@@ -143,12 +143,13 @@ class CSVtoXMLConverter:
                 else:
                     error_message = "\n!! Validation failed. XML won't be generated !!"
                     print(error_message)
-                    return None, error_message
+                    return None  # Return None instead of tuple
             except etree.DocumentInvalid as e:
                 print(f"\nError during XSD validation: {e}")
-                return None, str(e)
+                return str(e)  # Return the error message as a string
         else:
-            return dom.toprettyxml(), None
+            return dom.toprettyxml()
+
 
 
     def validate_xml_with_xsd(self, xml_str, xsd_file):

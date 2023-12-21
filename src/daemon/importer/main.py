@@ -7,7 +7,7 @@ from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler, FileCreatedEvent
 from utils.db_access import DBAccess
 from pathlib import Path
-from utils.to_xml_converter import CSVtoXMLConverter
+from utils.csv_to_xml_converter import CSVtoXMLConverter
 from utils.importer import importFile
 
 def get_csv_files_in_input_folder():

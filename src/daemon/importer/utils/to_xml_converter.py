@@ -1,8 +1,7 @@
 import csv
 import xml.dom.minidom as md
 import xml.etree.ElementTree as ET
-import urllib3
-import requests
+
 from utils.reader import CSVReader
 from entities.nation import Nation
 from entities.club import Club
@@ -13,18 +12,6 @@ class CSVtoXMLConverter:
 
     def __init__(self, path):
         self._reader = CSVReader(path)
-
-    def get_data(self, nation):
-
-        address = nation
-        url = 'https://nominatim.openstreetmap.org/search/' + urllib3.parse.quote(address) + '?format=json'
-
-        coordinates = requests.get(url).json()
-
-        return [
-            coordinates[0]["lat"],
-            coordinates[0]["lon"]
-        ]
 
 
     def to_xml(self):
@@ -107,7 +94,8 @@ class CSVtoXMLConverter:
 
         # generate the final xml
         for nation in nations.values():
-            coordinates = self.get_data(nation.get_name())
+            coordinates = nation.get_geoloc(nation.get_name())
+            nation.set_geoloc(coordinates[0], coordinates[1])
 
         root_el = ET.Element("Football")
 
@@ -116,8 +104,8 @@ class CSVtoXMLConverter:
             club_el = ET.SubElement(clubs_el, "Club", name=club._name)
             nation_el = ET.SubElement(club_el, "Nations")
 
-            for nation, players in club.players_by_country.items():
-                nation_el = ET.SubElement(nation_el, "Nation", name=nation.get_name(), Coordenadas=f"{coordinates[0]}, {coordinates[1]}")
+            for nation, players in club.players_by_nation.items():
+                nation_el = ET.SubElement(nation_el, "Nation", name=nation.get_name(), Coordenadas=f"{nation._lat}, {nation._lon}")
                 players_el = ET.SubElement(nation_el, "Players")
 
                 for player in players:

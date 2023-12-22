@@ -79,58 +79,63 @@ func sendToBroker(fileName string, taskType string) {
 	fmt.Println("Mensagem enviada para o RabbitMQ com sucesso!")
 }
 
-func isNewEntity(db *sql.DB, fileName string) bool {
-	query := `
-		SELECT EXISTS (
-			SELECT 1
-			FROM imported_documents
-			WHERE file_name = $1
-		)
-	`
-
-	var exists bool
-	err := db.QueryRow(query, fileName).Scan(&exists)
-	if err != nil {
-		log.Fatal("Erro ao verificar existência da entidade:", err)
-	}
-
-	return !exists
+func hasNewEntity() bool {
+	//logica
+	return true
 }
 
-func checkNewXMLFiles(db *sql.DB) {
-	query := `
-		SELECT file_name, created_on
-		FROM imported_documents
-		WHERE created_on > $1
-	`
+func hasNewLocation() bool {
+	//logica
+	return true
+}
 
-	umDiaAtras := time.Now().Add(-24 * time.Hour)
+func checkNewXMLFilesEvery60Seconds(db *sql.DB) {
+	fmt.Println("Verificando novos arquivos XML a cada 60 segundos:")
 
-	rows, err := db.Query(query, umDiaAtras)
-	if err != nil {
-		log.Fatal("Erro ao executar a consulta:", err)
-	}
-	defer rows.Close()
+	ticker := time.NewTicker(60 * time.Second)
+	defer ticker.Stop()
 
-	fmt.Println("Verificando novos arquivos XML carregados nas últimas 24 horas:")
+	for {
+		select {
+		case <-ticker.C:
+			query := `
+				SELECT file_name, created_on
+				FROM imported_documents
+				WHERE created_on > $1
+			`
 
-	for rows.Next() {
-		var fileName string
-		var createdOn time.Time
-		err := rows.Scan(&fileName, &createdOn)
-		if err != nil {
-			log.Fatal("Erro ao escanear o resultado da consulta:", err)
+			// Define o limite de tempo para 60 segundos atrás
+			sixtySecondsAgo := time.Now().Add(-60 * time.Second)
+
+			rows, err := db.Query(query, sixtySecondsAgo)
+			if err != nil {
+				log.Fatal("Erro ao executar a consulta:", err)
+			}
+
+			for rows.Next() {
+				var fileName string
+				var createdOn time.Time
+				err := rows.Scan(&fileName, &createdOn)
+				if err != nil {
+					log.Fatal("Erro ao escanear o resultado da consulta:", err)
+				}
+
+				fmt.Printf("Novo arquivo XML encontrado: Nome do arquivo: %s, Criado em: %s\n", fileName, createdOn)
+				// Enviar para o RabbitMQ
+				if hasNewEntity {
+					task = "Nova entidade."
+				}else{
+					task = "Atualização de dados geograficos."
+				}
+				sendToBroker(fileName, task)
+			}
+
+			if err := rows.Err(); err != nil {
+				log.Fatal("Erro durante a iteração dos resultados:", err)
+			}
+
+			rows.Close()
 		}
-
-		if isNewEntity(db, fileName) {
-			sendToBroker(fileName, "Importar nova entidade")
-		} else {
-			sendToBroker(fileName, "Atualização de dados geográficos")
-		}
-	}
-
-	if err := rows.Err(); err != nil {
-		log.Fatal("Erro durante a iteração dos resultados:", err)
 	}
 }
 
@@ -138,5 +143,5 @@ func main() {
 	db := connectDB()
 	defer db.Close()
 
-	checkNewXMLFiles(db)
+	checkNewXMLFilesEvery60Seconds(db)
 }

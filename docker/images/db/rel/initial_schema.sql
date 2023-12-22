@@ -1,16 +1,14 @@
+-- Criar extensões necessárias
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-CREATE EXTENSION IF NOT EXISTS POSTGIS;
-CREATE EXTENSION IF NOT EXISTS POSTGIS_TOPOLOGY;
+CREATE EXTENSION IF NOT EXISTS postgis;
 
+-- Tabela para os Jogadores
 CREATE TABLE public.player (
-    
-	id              uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id              uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
     name            VARCHAR(255) NOT NULL,
-    nation          VARCHAR(255) NOT NULL,
-    club            VARCHAR(255) NOT NULL,
-    position        VARCHAR(50) NOT NULL,
     age             INTEGER NOT NULL,
     overall         INTEGER NOT NULL,
+    position        VARCHAR(50) NOT NULL,
     pace            INTEGER NOT NULL,
     shooting        INTEGER NOT NULL,
     passing         INTEGER NOT NULL,
@@ -51,38 +49,25 @@ CREATE TABLE public.player (
     url             VARCHAR(255) NOT NULL,
     gender          VARCHAR(10) NOT NULL,
     gk              INTEGER,
-	id_nation		uuid NOT NULL,
-	id_club			uuid NOT NULL,
-	created_on      TIMESTAMP NOT NULL DEFAULT NOW(),
-	updated_on      TIMESTAMP NOT NULL DEFAULT NOW()
+    id_nation       uuid REFERENCES nation(id) ON DELETE CASCADE,
+    id_club         uuid REFERENCES club(id) ON DELETE CASCADE,
+    created_on      TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_on      TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
+-- Tabela para os Clubes
 CREATE TABLE public.club (
-    id         		uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-    nome       		VARCHAR(255) NOT NULL,
-	created_on      TIMESTAMP NOT NULL DEFAULT NOW(),
-	updated_on      TIMESTAMP NOT NULL DEFAULT NOW()
+    id          uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+    name        VARCHAR(255) NOT NULL,
+    created_on  TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_on  TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
+-- Tabela para as Nações
 CREATE TABLE public.nation (
-    id uuid			PRIMARY KEY DEFAULT uuid_generate_v4(),
-    nome			VARCHAR(255) NOT NULL,
-    geom 			GEOMETRY,
-	created_on      TIMESTAMP NOT NULL DEFAULT NOW(),
-	updated_on      TIMESTAMP NOT NULL DEFAULT NOW()
+    id          uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+    name        VARCHAR(255) NOT NULL,
+    coordinates GEOMETRY(Point, 4326), -- Coordenadas geográficas (latitude e longitude)
+    created_on  TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_on  TIMESTAMP NOT NULL DEFAULT NOW()
 );
-
-
-
-
-ALTER TABLE player
-    ADD CONSTRAINT player_nation_id_fk
-        FOREIGN KEY (id_nation) REFERENCES nation
-            ON DELETE CASCADE;
-
-ALTER TABLE player
-    ADD CONSTRAINT player_club_id_fk
-        FOREIGN KEY (id_club) REFERENCES club
-            ON DELETE SET NULL;
-
-

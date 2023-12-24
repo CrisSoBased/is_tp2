@@ -93,9 +93,7 @@ class CSVtoXMLConverter:
         )
 
         # generate the final xml
-        for nation in nations.values():
-            coordinates = nation.get_geoloc(nation.get_name())
-            nation.set_geoloc(coordinates[0], coordinates[1])
+       
                         
         root_el = ET.Element("Football")
 
@@ -105,8 +103,8 @@ class CSVtoXMLConverter:
             nations_el = ET.SubElement(club_el, "Nations")
 
             for nation, players in club.players_by_nation.items():
-                nations_el = ET.SubElement(nations_el, "Nation", name=nation.get_name(), Coordenadas=f"{nation._lat}, {nation._lon}")
-                players_el = ET.SubElement(nations_el, "Players")
+                nation_el = ET.SubElement(nations_el, "Nation", name=nation.get_name())
+                players_el = ET.SubElement(nation_el, "Players")
 
                 for player in players:
                     players_el.append(player.to_xml())

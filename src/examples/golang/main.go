@@ -122,11 +122,12 @@ func checkNewXMLFilesEvery60Seconds(db *sql.DB) {
 
 				fmt.Printf("Novo arquivo XML encontrado: Nome do arquivo: %s, Criado em: %s\n", fileName, createdOn)
 				// Enviar para o RabbitMQ
-				if hasNewEntity {
+				if hasNewEntity() {
 					task = "Nova entidade."
-				}else{
+				}else if hasNewLocation() {
 					task = "Atualização de dados geograficos."
 				}
+				
 				sendToBroker(fileName, task)
 			}
 

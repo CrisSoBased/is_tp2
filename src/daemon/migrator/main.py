@@ -3,6 +3,7 @@ import time
 
 import psycopg2
 from psycopg2 import OperationalError
+from migrator.db_access import DBAccessMigrator
 
 POLLING_FREQ = int(sys.argv[1]) if len(sys.argv) >= 2 else 60
 
@@ -46,12 +47,34 @@ if __name__ == "__main__":
         if db_dst is None or db_org is None:
             continue
 
+        db_access_migrator = DBAccessMigrator
         print("Checking updates...")
         # !TODO: 1- Execute a SELECT query to check for any changes on the table
+        cursor_org = db_dst.cursor()
+        changes = cursor_org.execute("select * from imported_documents where is_migrated=0")
+
+
         # !TODO: 2- Execute a SELECT queries with xpath to retrieve the data we want to store in the relational db
+        players_data = db_access_migrator.players_to_store()
+        print("Players to store:")
+        for player in players_data:
+            print("Id:", player[0], "Name:", player[1], "Gender:", player[2], "Nation:", player[3])
+
+        nations_data = db_access_migrator.nations_to_store()
+        print("Nations data to store:")
+        for nation in nations_data:
+            print("Id:",nation[0],"Name:", nation[1])
+
+        competitions_data = db_access_migrator.competitions_to_store()
+        print("Competitions to store:")
+        for competition in competitions_data:
+            print("Year:", competition[0], "City:", competition[1])
         # !TODO: 3- Execute INSERT queries in the destination db
         # !TODO: 4- Make sure we store somehow in the origin database that certain records were already migrated.
         #          Change the db structure if needed.
+
+        cursor_org = db_dst.cursor()
+        cursor_org.execute("UPDATE imported_documents SET is_migrated = 1")
 
         db_org.close()
         db_dst.close()

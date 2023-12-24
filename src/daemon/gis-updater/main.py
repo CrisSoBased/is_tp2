@@ -7,19 +7,32 @@ POLLING_FREQ = int(sys.argv[1]) if len(sys.argv) >= 2 else 60
 ENTITIES_PER_ITERATION = int(sys.argv[2]) if len(sys.argv) >= 3 else 10
 
 
-def get_data(country):
-    if country.lower() == 'korea dpr':
-            return [0, 0]
-    else:
-        address = country
-        url = 'https://nominatim.openstreetmap.org/search/' + urllib.parse.quote(address) + '&format=json'
+def get_data(self, nation):
+        if nation.lower() == 'korea dpr':
+            return [0, 0]  # Retorna coordenadas padrão para Korea
+        else:
+            location = nation
+            # Remova a barra do final da URL
+            url = 'https://nominatim.openstreetmap.org/search?q=' + urllib.parse.quote(location) + '&format=json'
 
-        coordinates = requests.get(url).json()
+            try:
+                response = requests.get(url)
+                response.raise_for_status()  # Verifica se a resposta da solicitação foi bem-sucedida
 
-        return [
-            coordinates[0]["lat"],
-            coordinates[0]["lon"]
-        ]
+                geolocation = response.json()
+
+                if geolocation:
+                    return [
+                        geolocation[0]['lat'],
+                        geolocation[0]['lon']
+                    ]
+                else:
+                    print(f"Geolocalização não encontrada para {nation}")
+                    return [0, 0]  # Retornar coordenadas padrão ou outra abordagem que fizer sentido
+
+            except requests.exceptions.RequestException as e:
+                print(f"Erro na solicitação de geolocalização: {e}")
+                return [0, 0]  # Retornar coordenadas padrão ou outra abordagem que fizer sentido
 
 if __name__ == "__main__":
 
@@ -32,17 +45,17 @@ if __name__ == "__main__":
         # Create a cursor to execute queries
         cur = connection.cursor()
 
-        cur.execute(f"select id,name from countries where geom is null LIMIT {ENTITIES_PER_ITERATION}")
+        cur.execute(f"select id,name from nations where geom is null LIMIT {ENTITIES_PER_ITERATION}")
 
-        countries = cur.fetchall()
+        nations = cur.fetchall()
 
         # !TODO: 2- Use the entity information to retrieve coordinates from an external API
 
-        for id,name in countries:
+        for id,name in nations:
             coordinates = get_data(name)
 
             cur.execute(f"update nation set geom = ST_SetRID(ST_MakePoint({coordinates[0]['lon']},"
-                        " {coordinates[0]['lat']}), 4326) where id = {id}")
+                        f" {coordinates[0]['lat']}), 4326) where id = {id}")
 
 
         # !TODO: 3- Submit the changes

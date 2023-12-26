@@ -19,10 +19,24 @@ def get_csv_files_in_input_folder():
 def generate_unique_file_name(directory, part_number):
     return f"{directory}/{str(uuid.uuid4())}_part{part_number}.xml"
 
-def convert_csv_to_xml(in_path, out_path):
+def convert_csv_to_xml(in_path, out_paths, num_parts):
     converter = CSVtoXMLConverter(in_path)
-    file = open(out_path, "w")
-    file.write(converter.to_xml_str())
+    
+    # Calculate the number of rows to include in each part
+    total_rows = len(converter.data)
+    rows_per_part = total_rows // num_parts
+    remaining_rows = total_rows % num_parts
+
+    # Iterate over the parts and write the XML content to each file
+    start_index = 0
+    for part, out_path in enumerate(out_paths):
+        end_index = start_index + rows_per_part + (1 if part < remaining_rows else 0)
+        part_data = converter.data[start_index:end_index]
+
+        with open(out_path, "w") as file:
+            file.write(CSVtoXMLConverter.data_to_xml(part_data))
+
+        start_index = end_index
 
 class CSVHandler(FileSystemEventHandler):
     def __init__(self, input_path, output_path):
@@ -45,13 +59,12 @@ class CSVHandler(FileSystemEventHandler):
 
         # we generate a unique file name for the XML file
         #alterei aqui
-        xml_paths = [generate_unique_file_name(self._output_path, part) for part in range(NUM_XML_PARTS)]
+        xml_paths = [generate_unique_file_name(self._output_path, part) for part in range(1, NUM_XML_PARTS + 1)]
 
-        # we do the conversion
-        # !TODO: once the conversion is done, we should updated the converted_documents tables
         #alterei aqui
-        for part, xml_path in enumerate(xml_paths):
-            convert_csv_to_xml(csv_path, xml_path, NUM_XML_PARTS)
+        convert_csv_to_xml(csv_path, xml_paths, NUM_XML_PARTS)
+        
+        for xml_path in xml_paths:
             print(f"new xml file generated: '{xml_path}'")
 
             # get the file size
@@ -61,10 +74,9 @@ class CSVHandler(FileSystemEventHandler):
             db_access.convert_document(csv_path, xml_path, file_size)
             # !TODO: we should store the XML document into the imported_documents table
             #open the file to send the xml data
-            with open(xml_path,encoding='latin-1') as file:
+            with open(xml_path, encoding='latin-1') as file:
                 data = file.read()
-                file.close()
-
+            
             # import the file into the db
             db_access.import_xml_document(xml_path, data)
 

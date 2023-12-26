@@ -1,6 +1,7 @@
 import asyncio
 import time
 import uuid
+import re
 
 import os
 from watchdog.observers import Observer
@@ -9,34 +10,26 @@ from utils.db_access import DBAccess
 from pathlib import Path
 from utils.csv_to_xml_converter import CSVtoXMLConverter
 
+os.environ.get('NUM_XML_PARTS')
 
-NUM_XML_PARTS = int(os.environ.get("NUM_XML_PARTS", 1))
 
 def get_csv_files_in_input_folder():
     return [os.path.join(dp, f) for dp, dn, filenames in os.walk(CSV_INPUT_PATH) for f in filenames if
             os.path.splitext(f)[1] == '.csv']
-#alterei aqui
-def generate_unique_file_name(directory, part_number):
-    return f"{directory}/{str(uuid.uuid4())}_part{part_number}.xml"
 
-def convert_csv_to_xml(in_path, out_paths, num_parts):
-    converter = CSVtoXMLConverter(in_path)
+def generate_unique_file_name(directory):
+    j = f"{directory}/{str(uuid.uuid4())}.xml"
+    j = re.sub(r'/xml\d+/', '/xml/', j)
     
-    # Calculate the number of rows to include in each part
-    total_rows = len(converter.data)
-    rows_per_part = total_rows // num_parts
-    remaining_rows = total_rows % num_parts
+    return j
 
-    # Iterate over the parts and write the XML content to each file
-    start_index = 0
-    for part, out_path in enumerate(out_paths):
-        end_index = start_index + rows_per_part + (1 if part < remaining_rows else 0)
-        part_data = converter.data[start_index:end_index]
 
-        with open(out_path, "w") as file:
-            file.write(CSVtoXMLConverter.data_to_xml(part_data))
 
-        start_index = end_index
+def convert_csv_to_xml(in_path, out_path, i):
+ 
+    converter = CSVtoXMLConverter(in_path, i)
+    file = open(out_path, "w")
+    file.write(converter.to_xml_str(i))
 
 class CSVHandler(FileSystemEventHandler):
     def __init__(self, input_path, output_path):
@@ -58,27 +51,47 @@ class CSVHandler(FileSystemEventHandler):
         print(f"new file to convert: '{csv_path}'")
 
         # we generate a unique file name for the XML file
-        #alterei aqui
-        xml_paths = [generate_unique_file_name(self._output_path, part) for part in range(1, NUM_XML_PARTS + 1)]
-
-        #alterei aqui
-        convert_csv_to_xml(csv_path, xml_paths, NUM_XML_PARTS)
         
-        for xml_path in xml_paths:
+        for i in range(10):
+
+            name = f"{self._output_path}{str(i)}"
+            print(f"new name : '{name}'")
+            xml_path = generate_unique_file_name(name)
+            convert_csv_to_xml(csv_path, xml_path, i)
             print(f"new xml file generated: '{xml_path}'")
 
-            # get the file size
-            file_size = Path(csv_path).stat().st_size
-            # import the document to the db
-            db_access = DBAccess()
-            db_access.convert_document(csv_path, xml_path, file_size)
-            # !TODO: we should store the XML document into the imported_documents table
-            #open the file to send the xml data
-            with open(xml_path, encoding='latin-1') as file:
-                data = file.read()
+        
+        #xml_path = generate_unique_file_name(self._output_path)
+
+        # we do the conversion
+        # !TODO: once the conversion is done, we should updated the converted_documents tables
+        #convert_csv_to_xml(csv_path, xml_path)
+        
+       
+        #print(f"new xml file generated: '{xml_path}'")
+
+        # get the file size
+        file_size = Path(csv_path).stat().st_size
+        # import the document to the db
+        db_access = DBAccess()
+        db_access.convert_document(csv_path, xml_path, file_size)
+        # !TODO: we should store the XML document into the imported_documents table
+        #open the file to send the xml data
+        with open(xml_path,encoding='latin-1') as file:
+            data = file.read()
+            file.close()
+
+        # import the file into the db
+        db_access.import_xml_document(xml_path, data)
+
+    async def get_the_last_name_xml(self, i):
+        db_access = DBAccess()
+        name =  f"{db_access.get_last_name()}_{i}"
             
-            # import the file into the db
-            db_access.import_xml_document(xml_path, data)
+        return name
+
+
+
 
     async def get_converted_files(self):
         csv_files = []

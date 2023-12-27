@@ -10,80 +10,77 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Player{
-  id String @id @default(uuid())
-  name String
-  position String
-  Age  Int
-  Overall Int
-  Pace Int
-  Shooting Int
-  Passing Int
-  Dribbling Int
-  Defending Int
-  Physicality Int
-  Acceleration Int
-  Sprint Int
-  Positioning Int
-  Finishing Int
-  Shot Int
-  Long Int
-  Volleys Int
-  Penalties Int
-  Vision Int
-  Crossing Int
-  Free Int
-  Curve Int
-  Agility Int
-  Balance Int
-  Reactions Int
-  Ball Int
-  Composure Int
-  Interceptions Int
-  Heading Int
-  Def Int
-  Standing Int
-  Sliding Int
-  Jumping Int
-  Stamina Int
-  Strength Int
-  Aggression Int
-  Att_work_rate String
-  Def_work_rate String
-  Preferred_foot String
-  Weak_foot Int
-  Skill_moves Int
-  URL String
-  Gender String
-  GK Int
-  nation Nation @relation(fields: [nationId], references: [id])
-  nationId Int
-  club Club @relation(fields: [clubId], references: [id])
-  clubId Int
-  createdOn  DateTime @default(now()) @map("created_on")
-  updatedOn  DateTime @updatedAt @map("updated_on")
+// schema.prisma
 
-  @@map("players")
+// Definição da tabela Nation
+model nation {
+  id                String      @id @default(uuid()) @db.Uuid
+  name              String
+  created_on        DateTime    @default(now())
+  updated_on        DateTime    @default(now())
+  players           player[]
 }
 
-model Club{
-  id String @id @default(uuid())
-  name String
-  players Player[]
-  createdOn  DateTime @default(now()) @map("created_on")
-  updatedOn  DateTime @updatedAt @map("updated_on")
-
-  @@map("clubs")
+// Definição da tabela Club
+model club {
+  id                String      @id @default(uuid()) @db.Uuid
+  name              String
+  created_on        DateTime    @default(now())
+  updated_on        DateTime    @default(now())
+  players           player[]
 }
 
-model Nation{
-  id String @id @default(uuid())
-  name String
-  players Player[]
-  createdOn  DateTime @default(now()) @map("created_on")
-  updatedOn  DateTime @updatedAt @map("updated_on")
-
-  @@map("nations")
+// Definição da tabela Player
+model player {
+  id                String      @id @default(uuid()) @db.Uuid
+  name              String
+  age               Int
+  overall           Int
+  position          String
+  pace              Int
+  shooting          Int
+  passing           Int
+  dribbling         Int
+  defending         Int
+  physicality       Int
+  acceleration      Int
+  sprint            Int
+  positioning       Int
+  finishing         Int
+  shot              Int
+  long              Int
+  volleys           Int
+  penalties         Int
+  vision            Int
+  crossing          Int
+  free              Int
+  curve             Int
+  agility           Int
+  balance           Int
+  reactions         Int
+  ball              Int
+  composure         Int
+  interceptions     Int
+  heading           Int
+  def               Int
+  standing          Int
+  sliding           Int
+  jumping           Int
+  stamina           Int
+  strength          Int
+  aggression        Int
+  att_work_rate     String
+  def_work_rate     String
+  preferred_foot    String
+  weak_foot         Int
+  skill_moves       Int
+  url               String
+  gender            String
+  gk                Int?
+  nation            nation?     @relation(fields: [id_nation], references: [id])
+  id_nation         String?
+  club              club?       @relation(fields: [id_club], references: [id])
+  id_club           String?
+  created_on        DateTime    @default(now())
+  updated_on        DateTime    @default(now())
 }
-
-

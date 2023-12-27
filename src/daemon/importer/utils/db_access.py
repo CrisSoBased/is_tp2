@@ -39,6 +39,36 @@ class DBAccess:
                 connection.close()
 
     # insert xml into db
+    
+    def get_last_name(self):
+        
+        connection = None
+        cursor = None
+
+        try:
+            connection = self.connect_connection()
+            cursor = self.connect_cursor(connection)
+
+            cursor.execute("SELECT file_name FROM imported_documents ORDER BY id DESC LIMIT 1")
+
+            files = cursor.fetchall()
+
+            if connection:
+                cursor.close()
+                connection.close()
+
+                return files
+
+        except (Exception, psycopg2.Error) as error:
+            print("Failed to insert data", error)
+
+        finally:
+            if connection:
+                cursor.close()
+                connection.close()
+
+    
+    
     def import_xml_document(self,file_name,xml_data):
         connection = None
         cursor = None

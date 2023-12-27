@@ -11,8 +11,8 @@ from lxml import etree
 
 class CSVtoXMLConverter:
 
-    def __init__(self, path):
-        self._reader = CSVReader(path)
+    def __init__(self, path, i):
+        self._reader = CSVReader(path, i)
 
     def to_xml(self):
         # read countries
@@ -120,8 +120,8 @@ class CSVtoXMLConverter:
         xml_str = ET.tostring(self.to_xml(), encoding='utf-8', method='xml').decode()
         dom = md.parseString(xml_str)
         return dom.toprettyxml()
-    """
-    def to_xml_str(self, file_path=None, xsd_path=None):
+    """ 
+    def to_xml_str(self, i, file_path=None, xsd_path=None):
         xml_tree = self.to_xml()
 
         xml_str = ET.tostring(xml_tree.getroot(), encoding='utf-8', method='xml').decode()

@@ -2,9 +2,26 @@
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS postgis;
 
+-- Tabela para as Nações
+CREATE TABLE public.Nation (
+    id          uuid PRIMARY KEY DEFAULT uuid_generate_v5(uuid_ns_dns(), 'nation'),
+    name        VARCHAR(255) NOT NULL,
+    coordinates GEOMETRY(Point, 4326), -- Coordenadas geográficas (latitude e longitude)
+    created_on  TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_on  TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+-- Tabela para os Clubes
+CREATE TABLE public.Club (
+    id          uuid PRIMARY KEY DEFAULT uuid_generate_v5(uuid_ns_dns(), 'club'),
+    name        VARCHAR(255) NOT NULL,
+    created_on  TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_on  TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
 -- Tabela para os Jogadores
-CREATE TABLE public.player (
-    id              uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+CREATE TABLE public.Player (
+    id              uuid PRIMARY KEY DEFAULT uuid_generate_v5(uuid_ns_dns(), 'player'),
     name            VARCHAR(255) NOT NULL,
     age             INTEGER NOT NULL,
     overall         INTEGER NOT NULL,
@@ -49,25 +66,11 @@ CREATE TABLE public.player (
     url             VARCHAR(255) NOT NULL,
     gender          VARCHAR(10) NOT NULL,
     gk              INTEGER,
-    id_nation       uuid REFERENCES nation(id) ON DELETE CASCADE,
-    id_club         uuid REFERENCES club(id) ON DELETE CASCADE,
+    id_nation       uuid REFERENCES Nation(id) ON DELETE CASCADE,
+    id_club         uuid REFERENCES Club(id) ON DELETE CASCADE,
+    nation_coordinates GEOMETRY(Point, 4326), -- Coordenadas geográficas da nação do jogador
     created_on      TIMESTAMP NOT NULL DEFAULT NOW(),
     updated_on      TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
--- Tabela para os Clubes
-CREATE TABLE public.club (
-    id          uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-    name        VARCHAR(255) NOT NULL,
-    created_on  TIMESTAMP NOT NULL DEFAULT NOW(),
-    updated_on  TIMESTAMP NOT NULL DEFAULT NOW()
-);
 
--- Tabela para as Nações
-CREATE TABLE public.nation (
-    id          uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-    name        VARCHAR(255) NOT NULL,
-    coordinates GEOMETRY(Point, 4326), -- Coordenadas geográficas (latitude e longitude)
-    created_on  TIMESTAMP NOT NULL DEFAULT NOW(),
-    updated_on  TIMESTAMP NOT NULL DEFAULT NOW()
-);

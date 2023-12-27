@@ -1,6 +1,5 @@
-import sys
-
-from flask import Flask, request
+import sys, psycopg2
+from flask import Flask, request, make_response, jsonify
 
 PORT = int(sys.argv[1]) if len(sys.argv) >= 2 else 9000
 
@@ -11,24 +10,43 @@ app.config["DEBUG"] = True
 @app.route('/api/markers', methods=['GET'])
 def get_markers():
     args = request.args
+    neLng = args.get('neLng')
+    neLat = args.get('neLat')
+    swLng = args.get('swLng')
+    swLat = args.get('swLat')
 
-    return [
-        {
+    # Connect to database
+    connection = psycopg2.connect(user="is", password="is", host="db-rel", database="is")
+
+    cur = connection.cursor()
+
+    cur.execute("SELECT id, name, ST_Y(coordinates) as latitude, ST_X(coordinates) as longitude FROM nation "
+            "WHERE coordinates && ST_MakeEnvelope(%s, %s, %s, %s)", (neLng, neLat, swLng, swLat))
+    
+    markers = []
+
+    for row in cur:
+        markers.append({
             "type": "feature",
             "geometry": {
                 "type": "Point",
-                "coordinates": [41.69462, -8.84679]
+                "coordinates": [row[2], row[3]]
             },
             "properties": {
-                "id": "7674fe6a-6c8d-47b3-9a1f-18637771e23b",
-                "name": "Ronaldo",
-                "country": "Portugal",
-                "position": "Striker",
-                "imgUrl": "https://cdn-icons-png.flaticon.com/512/805/805401.png",
-                "number": 7
+                "id": row[0],
+                "name": row[1],
+                "imgUrl" : "https://cdn-icons-png.flaticon.com/512/535/535239.png"
             }
-        }
-    ]
+        })
+
+    print(markers)
+
+    cur.close()
+    connection.close()
+
+    response = make_response(jsonify(markers))
+
+    return response
 
 
 if __name__ == '__main__':

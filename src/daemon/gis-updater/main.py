@@ -7,7 +7,7 @@ POLLING_FREQ = int(sys.argv[1]) if len(sys.argv) >= 2 else 60
 ENTITIES_PER_ITERATION = int(sys.argv[2]) if len(sys.argv) >= 3 else 10
 
 
-def get_data(self, nation):
+def get_data(nation):
         if nation.lower() == 'korea dpr':
             return [0, 0]  # Retorna coordenadas padrão para Korea
         else:
@@ -23,8 +23,8 @@ def get_data(self, nation):
 
                 if geolocation:
                     return [
-                        geolocation[0]['lat'],
-                        geolocation[0]['lon']
+                        geolocation[0],
+                        geolocation[0]
                     ]
                 else:
                     print(f"Geolocalização não encontrada para {nation}")
@@ -45,17 +45,26 @@ if __name__ == "__main__":
         # Create a cursor to execute queries
         cur = connection.cursor()
 
-        cur.execute(f"select id,name from nations where geom is null LIMIT {ENTITIES_PER_ITERATION}")
+        cur.execute(f"select id,name from nation where coordinates is null LIMIT {ENTITIES_PER_ITERATION}")
 
         nations = cur.fetchall()
 
         # !TODO: 2- Use the entity information to retrieve coordinates from an external API
 
-        for id,name in nations:
+        for id, name in nations:
             coordinates = get_data(name)
 
-            cur.execute(f"update nation set geom = ST_SetRID(ST_MakePoint({coordinates[0]['lon']},"
-                        f" {coordinates[0]['lat']}), 4326) where id = {id}")
+            # Assuming coordinates is a list of dictionaries
+            lon = coordinates[0].get('lon', None)
+            lat = coordinates[0].get('lat', None)
+
+            if lon is not None and lat is not None:
+                # Update the database query
+                query = f"UPDATE nation SET coordinates = ST_SetSRID(ST_MakePoint({str(lon)}, {str(lat)}), 4326) WHERE id = '{id}'"
+                cur.execute(query)
+                print("done")
+            else:
+                print("Invalid coordinates format: 'lon' and 'lat' keys are missing.")
 
 
         # !TODO: 3- Submit the changes

@@ -4,9 +4,10 @@ from xmlrpc.server import SimpleXMLRPCRequestHandler
 
 from functions.string_length import string_length
 from functions.string_reverse import string_reverse
-from functions.queries import Queries
-from functions.string_length import string_length
-from functions.string_reverse import string_reverse
+from functions.database import fetch_clubs
+from functions.database import fetch_all_players_from_portugal
+from functions.database import fetch_all_players_CM_from_france
+from functions.database import fetch_all_players_by_nation
 
 
 
@@ -25,10 +26,7 @@ if __name__ == "__main__":
 
             # perform clean up, etc. here...
             print("exiting, gracefully")
-            sys.exit(0)
-
-
-        querie = Queries()    
+            sys.exit(0)  
 
         # signals
         signal.signal(signal.SIGTERM, signal_handler)
@@ -38,10 +36,10 @@ if __name__ == "__main__":
         # register both functions
         server.register_function(string_reverse)
         server.register_function(string_length)
-        server.register_function(querie.fetch_all_players_by_country)
-        server.register_function(querie.fetch_all_players_CM_from_france)
-        server.register_function(querie.fetch_clubs)
-        server.register_function(querie.fetch_all_players_from_portugal)
+        server.register_function(fetch_clubs)
+        server.register_function(fetch_all_players_from_portugal)
+        server.register_function(fetch_all_players_CM_from_france)
+        server.register_function(fetch_all_players_by_nation)
 
 
         # start the server

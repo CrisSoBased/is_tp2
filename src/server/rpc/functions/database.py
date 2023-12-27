@@ -1,78 +1,149 @@
 import psycopg2
 
-class Database:
-    def __init__(self):
-        self.connection = None
-        self.cursor = None
-        self.user = "is"
-        self.password = "is"
-        self.host = "is-db"
-        self.port = "5432"
-        self.database = "is"
+def db_connect():
+    connection = psycopg2.connect(user="is",
+                                  password="is",
+                                  host="db-xml",
+                                  database="is")
+    return connection
 
-    def connect(self):
-        if self.connection is None:
-            try:
-                self.connection = psycopg2.connect(
-                    user=self.user,
-                    password=self.password,
-                    host=self.host,
-                    port=self.port,
-                    database=self.database
-                )
-                self.cursor = self.connection.cursor()
-                print("\nConnection established successfully.")
-            except psycopg2.Error as error:
-                print(f"\nError: {error}")
+def cursor_connect(connection):
+    cursor = connection.cursor()
 
-    def disconnect(self):
-        if self.connection:
-            try:
-                self.cursor.close()
-                self.connection.close()
-                print("\nDisconnected successfully from the database.")
-            except psycopg2.Error as e:
-                print(f"\nError: {e}")
+    return cursor
 
-    def insert(self, sql_query, data):
-        self.connect()
-        try:
-            self.cursor.execute(sql_query, data)
-            self.connection.commit()
-            print("\nThe query was successfully executed.")
-        except psycopg2.Error as error:
-            print(f"\nError: {error}")   
+def fetch_clubs():
+    try:
+        connection = db_connect()
+
+        cursor = cursor_connect(connection)
+
+        ## Get the athletes names and id
+        cursor.execute("""
+        SELECT DISTINCT unnest(xpath('//Clubs/Club/@name', xml))::text as club
+        FROM imported_documents
+        ORDER BY club;
+        """)
+
+        results = cursor.fetchall()
+
+        if connection:
+            cursor.close()
+            connection.close()
+
+            return results
+        
+    except (Exception, psycopg2.Error) as error:
+        print("Failed to fetch data", error)
 
 
-    def selectAll(self, query):
-        self.connect()
-        with self.cursor as cursor:
-            cursor.execute(query)
-            result = [row for row in cursor.fetchall()]
-        return result
 
-    def selectOne(self, query, data):
-        self.connect()
-        with self.cursor as cursor:
-            cursor.execute(query, data)
-            result = cursor.fetchone()
-        return result
+def fetch_all_players_from_portugal():
+    try:
+        connection = db_connect()
 
-    def selectAllDict(self, query, data=None):
-        self.connect()
-        with self.cursor as cursor:
-            if data:
-                cursor.execute(query, data)
-            else:
-                cursor.execute(query)
+        cursor = cursor_connect(connection)
 
-            columns = [desc[0] for desc in cursor.description]
-            result = [dict(zip(columns, row)) for row in cursor.fetchall()]
-        return result
-    
-    def selectOneWithoutData(self, query):
-        self.connect()
-        with self.cursor as cursor:
-            cursor.execute(query)
-            result = cursor.fetchone()
-        return result
+        ## Get the athletes names and id
+        cursor.execute("""
+        SELECT
+            xpath('//Player/@name', player_xml)::text AS player_name,
+            xpath('//Player/@position', player_xml)::text AS player_position,
+            xpath('//Player/@overall', player_xml)::text AS player_overall,
+            xpath('//Player/@club', player_xml)::text AS player_club,
+            xpath('//Player/@age', player_xml)::text AS player_age,
+            xpath('//Player/@url', player_xml)::text AS player_url
+        FROM
+            imported_documents,
+            unnest(xpath('//Country[@name="Portugal"]/Players/Player', xml)) AS player_xml
+        WHERE
+            xpath('//Country[@name="Portugal"]', xml) IS NOT NULL
+        ORDER BY
+            player_name;
+        """)
+
+        results = cursor.fetchall()
+
+        if connection:
+            cursor.close()
+            connection.close()
+
+            return results
+        
+    except (Exception, psycopg2.Error) as error:
+        print("Failed to fetch data", error)
+
+
+
+def fetch_all_players_CM_from_france():
+    try:
+        connection = db_connect()
+
+        cursor = cursor_connect(connection)
+
+        ## Get the athletes names and id
+        cursor.execute("""
+        SELECT
+            xpath('//Country/@name', xml)::text AS country_name,
+            xpath('//Player/@name', player_xml)::text AS player_name,
+            xpath('//Player/@position', player_xml)::text AS player_position,
+            xpath('//Player/@overall', player_xml)::text AS player_overall,
+            xpath('//Player/@club', player_xml)::text AS player_club,
+            xpath('//Player/@age', player_xml)::text AS player_age,
+            xpath('//Player/@url', player_xml)::text AS player_url
+        FROM
+            imported_documents,
+            unnest(xpath('//Country[@name="France" and Players/Player/@position="CM"]/Players/Player', xml)) AS player_xml
+        WHERE
+            xpath('//Country[@name="France"]', xml) IS NOT NULL
+        ORDER BY
+            country_name, player_name;
+        """)
+
+        results = cursor.fetchall()
+
+        if connection:
+            cursor.close()
+            connection.close()
+
+            return results
+        
+    except (Exception, psycopg2.Error) as error:
+        print("Failed to fetch data", error)
+
+
+
+def fetch_all_players_by_nation():
+    try:
+        connection = db_connect()
+
+        cursor = cursor_connect(connection)
+
+        ## Get the athletes names and id
+        cursor.execute("""
+        SELECT
+            xpath('//Player/@name', player_xml)::text AS player_name,
+            xpath('//Player/@position', player_xml)::text AS player_position,
+            xpath('//Player/@overall', player_xml)::text AS player_overall,
+            xpath('//Player/@club', player_xml)::text AS player_club,
+            xpath('//Player/@age', player_xml)::text AS player_age,
+            xpath('//Player/@url', player_xml)::text AS player_url
+        FROM
+            imported_documents,
+            unnest(xpath('//Country[@name="{}"]/Players/Player', xml)) AS player_xml
+        WHERE
+            xpath('//Country[@name="{}"]', xml) IS NOT NULL
+        ORDER BY
+            player_name;
+        """)
+
+        results = cursor.fetchall()
+
+        if connection:
+            cursor.close()
+            connection.close()
+
+            return results
+        
+    except (Exception, psycopg2.Error) as error:
+        print("Failed to fetch data", error)

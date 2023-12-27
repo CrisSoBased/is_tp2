@@ -1,5 +1,72 @@
 package main
 
+
+
+type Player struct {
+	ID             string `xml:"id,attr"`
+	Name           string `xml:"name,attr"`
+	Age            string `xml:"age,attr"`
+	CountryRef     string `xml:"country_ref,attr"`
+	Club           string `xml:"club,attr"`
+	Position       string `xml:"position,attr"`
+	Overall        string `xml:"overall,attr"`
+	Pace           string `xml:"pace,attr"`
+	Shooting       string `xml:"shooting,attr"`
+	Passing        string `xml:"passing,attr"`
+	Dribbling      string `xml:"dribbling,attr"`
+	Defending      string `xml:"defending,attr"`
+	Physicality    string `xml:"physicality,attr"`
+	Acceleration   string `xml:"acceleration,attr"`
+	Sprint         string `xml:"sprint,attr"`
+	Positioning    string `xml:"positioning,attr"`
+	Finishing      string `xml:"finishing,attr"`
+	Shot           string `xml:"shot,attr"`
+	Long           string `xml:"long,attr"`
+	Volleys        string `xml:"volleys,attr"`
+	Penalties      string `xml:"penalties,attr"`
+	Vision         string `xml:"vision,attr"`
+	Crossing       string `xml:"crossing,attr"`
+	Free           string `xml:"free,attr"`
+	Curve          string `xml:"curve,attr"`
+	Agility        string `xml:"agility,attr"`
+	Balance        string `xml:"balance,attr"`
+	Reactions      string `xml:"reactions,attr"`
+	Ball           string `xml:"ball,attr"`
+	Composure      string `xml:"composure,attr"`
+	Interceptions  string `xml:"interceptions,attr"`
+	Heading        string `xml:"heading,attr"`
+	Defense        string `xml:"defense,attr"`
+	Standing       string `xml:"standing,attr"`
+	Sliding        string `xml:"sliding,attr"`
+	Jumping        string `xml:"jumping,attr"`
+	Stamina        string `xml:"stamina,attr"`
+	Strength       string `xml:"strength,attr"`
+	Aggression     string `xml:"aggression,attr"`
+	AttWorkRate    string `xml:"att_work_rate,attr"`
+	DefWorkRate    string `xml:"def_work_rate,attr"`
+	PreferredFoot  string `xml:"preferred_foot,attr"`
+	WeakFoot       string `xml:"weak_foot,attr"`
+	SkillMoves     string `xml:"skill_moves,attr"`
+	URL            string `xml:"url,attr"`
+	Gender         string `xml:"gender,attr"`
+	GK             string `xml:"gk,attr"`
+}
+
+type Nation struct {
+	Name        string   `xml:"name,attr"`
+	Coordenadas string `xml:"Coordenadas,attr"`
+	Players     []Player `xml:"Players>Player"`
+}
+
+type Club struct {
+	Name    string  `xml:"name,attr"`
+	Nations []Nation `xml:"Nations>Nation"`
+}
+
+
+
+
+
 import (
 	"database/sql"
 	"fmt"
@@ -79,15 +146,7 @@ func sendToBroker(fileName string, taskType string) {
 	fmt.Println("Mensagem enviada para o RabbitMQ com sucesso!")
 }
 
-func hasNewEntity() bool {
-	//logica
-	return true
-}
 
-func hasNewLocation() bool {
-	//logica
-	return true
-}
 
 func checkNewXMLFilesEvery60Seconds(db *sql.DB) {
 	fmt.Println("Verificando novos arquivos XML a cada 60 segundos:")
@@ -121,13 +180,9 @@ func checkNewXMLFilesEvery60Seconds(db *sql.DB) {
 				}
 
 				fmt.Printf("Novo arquivo XML encontrado: Nome do arquivo: %s, Criado em: %s\n", fileName, createdOn)
-				// Enviar para o RabbitMQ
-				if hasNewEntity() {
-					task = "Nova entidade."
-				}else if hasNewLocation() {
-					task = "Atualização de dados geograficos."
-				}
 				
+				//ver as entitys e criar uma task e fazer um json com a devida informaçao
+
 				sendToBroker(fileName, task)
 			}
 

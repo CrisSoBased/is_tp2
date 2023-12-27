@@ -1,5 +1,26 @@
 package main
 
+import (
+	"database/sql"
+	"fmt"
+	"log"
+	"time"
+	"io/ioutil"
+	"encoding/json"
+	"encoding/xml"     
+
+	"github.com/streadway/amqp"
+	_ "github.com/lib/pq"
+)
+
+const (
+	dbUser      = "is"
+	dbPassword  = "is"
+	dbName      = "is"
+	dbHost      = "db-xml"
+	rabbitMQURL = "amqp://is:is@rabbitmq:5672/is"
+	queueName   = "tasks"
+)
 
 
 type Player struct {
@@ -52,6 +73,10 @@ type Player struct {
 	GK             string `xml:"gk,attr"`
 }
 
+type Football struct {
+	Clubs []Club `xml:"Clubs>Club"`
+}
+
 type Nation struct {
 	Name        string   `xml:"name,attr"`
 	Coordenadas string `xml:"Coordenadas,attr"`
@@ -62,29 +87,6 @@ type Club struct {
 	Name    string  `xml:"name,attr"`
 	Nations []Nation `xml:"Nations>Nation"`
 }
-
-
-
-
-
-import (
-	"database/sql"
-	"fmt"
-	"log"
-	"time"
-
-	"github.com/streadway/amqp"
-	_ "github.com/lib/pq"
-)
-
-const (
-	dbUser      = "is"
-	dbPassword  = "is"
-	dbName      = "is"
-	dbHost      = "db-xml"
-	rabbitMQURL = "amqp://is:is@rabbitmq:5672/is"
-	queueName   = "tasks"
-)
 
 func connectDB() *sql.DB {
 	connStr := fmt.Sprintf("user=%s password=%s dbname=%s host=%s sslmode=disable",
@@ -103,7 +105,7 @@ func connectDB() *sql.DB {
 	return db
 }
 
-func sendToBroker(fileName string, taskType string) {
+func sendToBroker(jsonfile string, taskType string) {
 	conn, err := amqp.Dial(rabbitMQURL)
 	if err != nil {
 		log.Fatalf("Erro ao se conectar ao RabbitMQ: %s", err)
@@ -128,7 +130,7 @@ func sendToBroker(fileName string, taskType string) {
 		log.Fatalf("Erro ao declarar a fila: %s", err)
 	}
 
-	body := fmt.Sprintf("Tarefa para o arquivo: %s, Tipo: %s", fileName, taskType)
+	body := fmt.Sprintf("Tarefa para o arquivo: %s, Tipo: %s", jsonfile, taskType)
 	err = ch.Publish(
 		"",
 		q.Name,
@@ -146,6 +148,99 @@ func sendToBroker(fileName string, taskType string) {
 	fmt.Println("Mensagem enviada para o RabbitMQ com sucesso!")
 }
 
+
+func generateJSONFromPlayer(player Player, countryName string) ([]byte, error) {
+	
+	playerData := map[string]interface{}{
+		"country_name":  countryName,
+		"id":            player.ID,
+		"name":          player.Name,
+		"age":           player.Age,
+		"club":          player.Club,
+		"position":      player.Position,
+		"overall":       player.Overall,
+		"pace":          player.Pace,
+		"shooting":      player.Shooting,
+		"passing":       player.Passing,
+		"dribbling":     player.Dribbling,
+		"defending":     player.Defending,
+		"physicality":   player.Physicality,
+		"acceleration":  player.Acceleration,
+		"sprint":        player.Sprint,
+		"positioning":   player.Positioning,
+		"finishing":     player.Finishing,
+		"shot":          player.Shot,
+		"long":          player.Long,
+		"volleys":       player.Volleys,
+		"penalties":     player.Penalties,
+		"vision":        player.Vision,
+		"crossing":      player.Crossing,
+		"free":          player.Free,
+		"curve":         player.Curve,
+		"agility":       player.Agility,
+		"balance":       player.Balance,
+		"reactions":     player.Reactions,
+		"ball":          player.Ball,
+		"composure":     player.Composure,
+		"interceptions": player.Interceptions,
+		"heading":       player.Heading,
+		"defense":       player.Defense,
+		"standing":      player.Standing,
+		"sliding":       player.Sliding,
+		"jumping":       player.Jumping,
+		"stamina":       player.Stamina,
+		"strength":      player.Strength,
+		"aggression":    player.Aggression,
+		"att_work_rate": player.AttWorkRate,
+		"def_work_rate": player.DefWorkRate,
+		"preferred_foot": player.PreferredFoot,
+		"weak_foot":      player.WeakFoot,
+		"skill_moves":    player.SkillMoves,
+		"url":            player.URL,
+		"gender":         player.Gender,
+		"gk":             player.GK,
+	}
+
+	jsonData, err := json.Marshal(playerData)
+	if err != nil {
+		return nil, fmt.Errorf("Error encoding JSON: %v", err)
+	}
+
+	return jsonData, nil
+}
+
+func readXMLAndSendToBroker(filename string) {
+	xmlData, err := ioutil.ReadFile(filename)
+	if err != nil {
+		log.Println("Error reading XML file:", err)
+		return
+	}
+
+	var football Football
+	err = xml.Unmarshal(xmlData, &football)
+	if err != nil {
+		log.Println("Error decoding XML:", err)
+		return
+	}
+
+	taskType := "newEntity"
+
+	for _, club := range football.Clubs {
+		for _, nation := range club.Nations {
+			countryName := nation.Name
+			for _, player := range nation.Players {
+				jsonData, err := generateJSONFromPlayer(player, countryName)
+				if err != nil {
+					log.Println(err)
+					continue
+				}
+
+				// Envia a mensagem para o RabbitMQ
+				sendToBroker(string(jsonData), taskType)
+			}
+		}
+	}
+}
 
 
 func checkNewXMLFilesEvery60Seconds(db *sql.DB) {
@@ -172,7 +267,7 @@ func checkNewXMLFilesEvery60Seconds(db *sql.DB) {
 			}
 
 			for rows.Next() {
-				var fileName string
+				var fileName string 
 				var createdOn time.Time
 				err := rows.Scan(&fileName, &createdOn)
 				if err != nil {
@@ -182,8 +277,8 @@ func checkNewXMLFilesEvery60Seconds(db *sql.DB) {
 				fmt.Printf("Novo arquivo XML encontrado: Nome do arquivo: %s, Criado em: %s\n", fileName, createdOn)
 				
 				//ver as entitys e criar uma task e fazer um json com a devida informaçao
-
-				sendToBroker(fileName, task)
+				
+				readXMLAndSendToBroker(fileName)			
 			}
 
 			if err := rows.Err(); err != nil {

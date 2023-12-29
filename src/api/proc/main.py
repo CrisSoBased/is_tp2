@@ -1,10 +1,11 @@
 import sys
 import xmlrpc.client
-
+from flask_cors import CORS
 from flask import Flask, jsonify, request
 PORT = int(sys.argv[1]) if len(sys.argv) >= 2 else 9000
 
 app = Flask(__name__)
+CORS(app)
 app.config["DEBUG"] = True
 
 # clubs
@@ -34,9 +35,8 @@ def get_players_cm_from_france():
     return jsonify(result)
 
 # players by nation
-@app.route('/api/players_by_nation', methods=['GET'])
-def get_players_by_nation():
-    nation = request.args.get('nation')
+@app.route('/api/players_by_nation/<nation>', methods=['GET'])
+def get_players_by_nation(nation):
 
     print("connecting to server...")
     server = xmlrpc.client.ServerProxy("http://rpc-server:9000")

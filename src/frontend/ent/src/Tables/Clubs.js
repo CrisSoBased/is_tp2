@@ -11,7 +11,7 @@ import {
     TableRow
 } from "@mui/material";
 
-function Players() {
+function Clubs() {
 
     const PAGE_SIZE = 10;
     const [page, setPage] = useState(1);
@@ -20,7 +20,7 @@ function Players() {
 
     useEffect(() => {
       console.log("Fetching data...");
-      fetch(`http://localhost:20001/players`)
+      fetch(`http://localhost:20001/clubs`)
         .then((response) => response.json())
         .then((data) => {
           setMaxDataSize(data.length)
@@ -31,14 +31,13 @@ function Players() {
 
     return (
         <>
-            <h1>Players</h1>
+            <h1>Clubs</h1>
 
             <TableContainer component={Paper}>
                 <Table sx={{minWidth: 650}} aria-label="simple table">
                     <TableHead>
                         <TableRow>
-                            <TableCell>Player Name</TableCell>
-                            <TableCell align="center">Age</TableCell>
+                            <TableCell>Club Name</TableCell>
                         </TableRow>
                     </TableHead>
                     <TableBody>
@@ -51,9 +50,6 @@ function Players() {
                                     >
                                         <TableCell component="td" scope="row">
                                             {row.name}
-                                        </TableCell>
-                                        <TableCell component="td" align="center" scope="row">
-                                            {row.age}
                                         </TableCell>
                                     </TableRow>
                                 ))
@@ -86,4 +82,4 @@ function Players() {
     );
 }
 
-export default Players;
+export default Clubs;

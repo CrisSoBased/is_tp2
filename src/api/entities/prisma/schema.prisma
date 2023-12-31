@@ -16,9 +16,9 @@ datasource db {
 model nation {
   id                String      @id @default(uuid()) @db.Uuid
   name              String
+  players           player[]
   created_on        DateTime    @default(now())
   updated_on        DateTime    @default(now())
-  players           player[]
 }
 
 // Definição da tabela Club

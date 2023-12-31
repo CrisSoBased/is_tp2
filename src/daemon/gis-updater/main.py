@@ -62,7 +62,6 @@ if __name__ == "__main__":
                 # Update the database query
                 query = f"UPDATE nation SET coordinates = ST_SetSRID(ST_MakePoint({str(lon)}, {str(lat)}), 4326) WHERE id = '{id}'"
                 cur.execute(query)
-                print("done")
             else:
                 print("Invalid coordinates format: 'lon' and 'lat' keys are missing.")
 

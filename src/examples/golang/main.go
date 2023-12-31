@@ -1,17 +1,6 @@
 package main
 
-import (
-	"database/sql"
-	"encoding/json"
-	"encoding/xml"
-	"fmt"
-	"io/ioutil"
-	"log"
-	"time"
 
-	"github.com/streadway/amqp"
-	_ "github.com/lib/pq"
-)
 
 type Player struct {
 	ID             string `xml:"id,attr"`
@@ -63,7 +52,6 @@ type Player struct {
 	GK             float64  `xml:"gk,attr"`
 }
 
-
 type Nation struct {
 	Name        string   `xml:"name,attr"`
 	Coordenadas string `xml:"Coordenadas,attr"`
@@ -76,11 +64,18 @@ type Club struct {
 }
 
 
-type Football struct {
-	Clubs []Club `xml:"Clubs>Club"`
-}
 
 
+
+import (
+	"database/sql"
+	"fmt"
+	"log"
+	"time"
+
+	"github.com/streadway/amqp"
+	_ "github.com/lib/pq"
+)
 
 const (
 	dbUser      = "is"
@@ -133,7 +128,7 @@ func sendToBroker(jsonfile string, taskType string) {
 		log.Fatalf("Erro ao declarar a fila: %s", err)
 	}
 
-	body := fmt.Sprintf(jsonfile)
+	body := fmt.Sprintf("Tarefa para o arquivo: %s, Tipo: %s", fileName, taskType)
 	err = ch.Publish(
 		"",
 		q.Name,
@@ -251,6 +246,99 @@ func readXMLAndSendToBroker(filename string) {
 	}
 }
 
+
+func generateJSONFromPlayer(player Player, countryName string) ([]byte, error) {
+	
+	playerData := map[string]interface{}{
+		"country_name":  countryName,
+		"id":            player.ID,
+		"name":          player.Name,
+		"age":           player.Age,
+		"club":          player.Club,
+		"position":      player.Position,
+		"overall":       player.Overall,
+		"pace":          player.Pace,
+		"shooting":      player.Shooting,
+		"passing":       player.Passing,
+		"dribbling":     player.Dribbling,
+		"defending":     player.Defending,
+		"physicality":   player.Physicality,
+		"acceleration":  player.Acceleration,
+		"sprint":        player.Sprint,
+		"positioning":   player.Positioning,
+		"finishing":     player.Finishing,
+		"shot":          player.Shot,
+		"long":          player.Long,
+		"volleys":       player.Volleys,
+		"penalties":     player.Penalties,
+		"vision":        player.Vision,
+		"crossing":      player.Crossing,
+		"free":          player.Free,
+		"curve":         player.Curve,
+		"agility":       player.Agility,
+		"balance":       player.Balance,
+		"reactions":     player.Reactions,
+		"ball":          player.Ball,
+		"composure":     player.Composure,
+		"interceptions": player.Interceptions,
+		"heading":       player.Heading,
+		"defense":       player.Defense,
+		"standing":      player.Standing,
+		"sliding":       player.Sliding,
+		"jumping":       player.Jumping,
+		"stamina":       player.Stamina,
+		"strength":      player.Strength,
+		"aggression":    player.Aggression,
+		"att_work_rate": player.AttWorkRate,
+		"def_work_rate": player.DefWorkRate,
+		"preferred_foot": player.PreferredFoot,
+		"weak_foot":      player.WeakFoot,
+		"skill_moves":    player.SkillMoves,
+		"url":            player.URL,
+		"gender":         player.Gender,
+		"gk":             player.GK,
+	}
+
+	jsonData, err := json.Marshal(playerData)
+	if err != nil {
+		return nil, fmt.Errorf("Error encoding JSON: %v", err)
+	}
+
+	return jsonData, nil
+}
+
+func readXMLAndSendToBroker(filename string) {
+	xmlData, err := ioutil.ReadFile(filename)
+	if err != nil {
+		log.Println("Error reading XML file:", err)
+		return
+	}
+
+	var football Football
+	err = xml.Unmarshal(xmlData, &football)
+	if err != nil {
+		log.Println("Error decoding XML:", err)
+		return
+	}
+
+	taskType := "newEntity"
+
+	for _, club := range football.Clubs {
+		for _, nation := range club.Nations {
+			countryName := nation.Name
+			for _, player := range nation.Players {
+				jsonData, err := generateJSONFromPlayer(player, countryName)
+				if err != nil {
+					log.Println(err)
+					continue
+				}
+
+				// Envia a mensagem para o RabbitMQ
+				sendToBroker(string(jsonData), taskType)
+			}
+		}
+	}
+}
 
 
 func checkNewXMLFilesEvery60Seconds(db *sql.DB) {

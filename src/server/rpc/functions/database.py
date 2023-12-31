@@ -46,20 +46,9 @@ def fetch_all_players_from_portugal():
 
         ## Get the athletes names and id
         cursor.execute("""
-        SELECT
-            xpath('//Player/@name', player_xml)::text AS player_name,
-            xpath('//Player/@position', player_xml)::text AS player_position,
-            xpath('//Player/@overall', player_xml)::text AS player_overall,
-            xpath('//Player/@club', player_xml)::text AS player_club,
-            xpath('//Player/@age', player_xml)::text AS player_age,
-            xpath('//Player/@url', player_xml)::text AS player_url
-        FROM
-            imported_documents,
-            unnest(xpath('//Country[@name="Portugal"]/Players/Player', xml)) AS player_xml
-        WHERE
-            xpath('//Country[@name="Portugal"]', xml) IS NOT NULL
-        ORDER BY
-            player_name;
+        SELECT DISTINCT unnest(xpath('//Nations/Nation[@name="Portugal"]/descendant::Player/@name', xml))::text as player_name
+        FROM imported_documents
+        ORDER BY player_name;
         """)
 
         results = cursor.fetchall()
@@ -83,21 +72,9 @@ def fetch_all_players_CM_from_france():
 
         ## Get the athletes names and id
         cursor.execute("""
-        SELECT
-            xpath('//Country/@name', xml)::text AS country_name,
-            xpath('//Player/@name', player_xml)::text AS player_name,
-            xpath('//Player/@position', player_xml)::text AS player_position,
-            xpath('//Player/@overall', player_xml)::text AS player_overall,
-            xpath('//Player/@club', player_xml)::text AS player_club,
-            xpath('//Player/@age', player_xml)::text AS player_age,
-            xpath('//Player/@url', player_xml)::text AS player_url
-        FROM
-            imported_documents,
-            unnest(xpath('//Country[@name="France" and Players/Player/@position="CM"]/Players/Player', xml)) AS player_xml
-        WHERE
-            xpath('//Country[@name="France"]', xml) IS NOT NULL
-        ORDER BY
-            country_name, player_name;
+        SELECT DISTINCT unnest(xpath('//Nations/Nation[@name="France"]/descendant::Player[@position="CM"]/@name', xml))::text as player_name
+        FROM imported_documents
+        ORDER BY player_name;
         """)
 
         results = cursor.fetchall()
@@ -113,29 +90,19 @@ def fetch_all_players_CM_from_france():
 
 
 
-def fetch_all_players_by_nation():
+def fetch_all_players_by_nation(nation):
     try:
         connection = db_connect()
-
         cursor = cursor_connect(connection)
 
-        ## Get the athletes names and id
-        cursor.execute("""
-        SELECT
-            xpath('//Player/@name', player_xml)::text AS player_name,
-            xpath('//Player/@position', player_xml)::text AS player_position,
-            xpath('//Player/@overall', player_xml)::text AS player_overall,
-            xpath('//Player/@club', player_xml)::text AS player_club,
-            xpath('//Player/@age', player_xml)::text AS player_age,
-            xpath('//Player/@url', player_xml)::text AS player_url
-        FROM
-            imported_documents,
-            unnest(xpath('//Country[@name="{}"]/Players/Player', xml)) AS player_xml
-        WHERE
-            xpath('//Country[@name="{}"]', xml) IS NOT NULL
-        ORDER BY
-            player_name;
-        """)
+        # Use o valor do parâmetro nation na consulta
+        query = """
+        SELECT DISTINCT unnest(xpath('//Nations/Nation[@name="%s"]/descendant::Player/@name', xml))::text as player_name
+        FROM imported_documents
+        ORDER BY player_name;
+        """ % nation
+
+        cursor.execute(query)
 
         results = cursor.fetchall()
 
@@ -144,6 +111,13 @@ def fetch_all_players_by_nation():
             connection.close()
 
             return results
-        
-    except (Exception, psycopg2.Error) as error:
-        print("Failed to fetch data", error)
+
+    except Exception as e:
+        # Trate a exceção conforme necessário
+        return {"error": str(e)}
+
+
+
+
+
+

@@ -37,17 +37,19 @@ services:
   # Container that automatically migrates data from db-xml to db-rel
   migrator:
     container_name: migrator
-    build: docker/images/python
+    build: docker/images/golang
     volumes:
       - ./src/daemon/migrator:/usr/src/app
       - ./docker/volumes/xml:/xml
     environment:
       USE_DEV_MODE: ${USE_DEV_MODE}
       POLLING_FREQ: ${POLLING_FREQ}
+      API_ENTITIES_URL: "localhost:${EXT_PORT_API_ENTITIES}"
     depends_on:
       - db-xml
       - db-rel
-
+      - api-entities
+      
   # Container that automatically migrates data from db-xml to db-rel
   gis-updater:
     container_name: gis-updater

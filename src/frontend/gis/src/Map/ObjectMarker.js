@@ -1,30 +1,35 @@
 import {Avatar, List, ListItem, ListItemIcon, ListItemText} from "@mui/material";
 import FlagIcon from '@mui/icons-material/Flag';
-import PictureInPictureAltIcon from '@mui/icons-material/PictureInPictureAlt';
-import ContactsIcon from '@mui/icons-material/Contacts';
 import React from "react";
 import {Marker, Popup} from 'react-leaflet';
 import {icon as leafletIcon, point} from "leaflet";
 
 const LIST_PROPERTIES = [
-    {"key": "country", label: "Country", Icon: FlagIcon},
-    {"key": "number", label: "Shirt Number", Icon: ContactsIcon},
-    {"key": "position", label: "Position", Icon: PictureInPictureAltIcon}
+    {"key": "nation", label: "Nation", Icon: FlagIcon}
 ];
 
 export function ObjectMarker({geoJSON}) {
     const properties = geoJSON?.properties
-    const {id, imgUrl, name} = properties;
-    const coordinates = geoJSON?.geometry?.coordinates;
+    const {id, name} = properties || {};
+    const imgUrl = process.env.PUBLIC_URL + '/marker_icon.jpg';
+    const coordinates = geoJSON?.geometry?.coordinates || [];
+    const markerIcon = imgUrl
+  ? leafletIcon({
+      iconUrl: imgUrl,
+      iconRetinaUrl: imgUrl,
+      iconSize: point(50, 50),
+    })
+  : null;
+
+    console.log("imgUrl:", imgUrl);
+    console.log("name:", name);
+    console.log("coordinates:", coordinates);
+
 
     return (
         <Marker
             position={coordinates}
-            icon={leafletIcon({
-                iconUrl: imgUrl,
-                iconRetinaUrl: imgUrl,
-                iconSize: point(50, 50),
-            })}
+            icon={markerIcon}
         >
             <Popup>
                 <List dense={true}>

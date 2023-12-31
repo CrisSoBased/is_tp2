@@ -76,7 +76,7 @@ function ObjectMarkersGroup() {
     useEffect(() => {
         const{_northEast: {lat: neLat, lng:neLng}, _southWest: {lat: swLat, lng:swLng}} = bounds
         console.log(`> getting data for bounds`, bounds);
-        const url = `http://localhost:20002/api/markers?neLng=${neLng}&neLat=${neLat}&swLng=${swLng}&swLat=${swLat}`
+        const url = `http://localhost:20002/api/tile?neLng=${neLng}&neLat=${neLat}&swLng=${swLng}&swLat=${swLat}`
         
             fetch(url)
                 .then(res => res.json())

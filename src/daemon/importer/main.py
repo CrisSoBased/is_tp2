@@ -49,9 +49,12 @@ class CSVHandler(FileSystemEventHandler):
             return
 
         print(f"new file to convert: '{csv_path}'")
+        file_size = Path(csv_path).stat().st_size
 
         # we generate a unique file name for the XML file
         
+        
+
         for i in range(10):
 
             name = f"{self._output_path}{str(i)}"
@@ -71,18 +74,17 @@ class CSVHandler(FileSystemEventHandler):
         #print(f"new xml file generated: '{xml_path}'")
 
         # get the file size
-        file_size = Path(csv_path).stat().st_size
-        # import the document to the db
-        db_access = DBAccess()
-        db_access.convert_document(csv_path, xml_path, file_size)
-        # !TODO: we should store the XML document into the imported_documents table
-        #open the file to send the xml data
-        with open(xml_path,encoding='latin-1') as file:
-            data = file.read()
-            file.close()
+            db_access = DBAccess()
+            # import the document to the db
+            db_access.convert_document(csv_path, xml_path, file_size)
+            # !TODO: we should store the XML document into the imported_documents table
+            #open the file to send the xml data
+            with open(xml_path,encoding='latin-1') as file:
+                data = file.read()
+                file.close()
 
-        # import the file into the db
-        db_access.import_xml_document(xml_path, data)
+            # import the file into the db
+            db_access.import_xml_document(xml_path, data)
 
     async def get_the_last_name_xml(self, i):
         db_access = DBAccess()

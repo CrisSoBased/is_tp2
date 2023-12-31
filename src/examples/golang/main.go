@@ -1,56 +1,68 @@
 package main
 
+import (
+	"database/sql"
+	"encoding/json"
+	"encoding/xml"
+	"fmt"
+	"io/ioutil"
+	"log"
+	"time"
 
+	"github.com/streadway/amqp"
+	_ "github.com/lib/pq"
+)
 
 type Player struct {
 	ID             string `xml:"id,attr"`
 	Name           string `xml:"name,attr"`
-	Age            string `xml:"age,attr"`
+	Age            int `xml:"age,attr"`
 	CountryRef     string `xml:"country_ref,attr"`
 	Club           string `xml:"club,attr"`
 	Position       string `xml:"position,attr"`
-	Overall        string `xml:"overall,attr"`
-	Pace           string `xml:"pace,attr"`
-	Shooting       string `xml:"shooting,attr"`
-	Passing        string `xml:"passing,attr"`
-	Dribbling      string `xml:"dribbling,attr"`
-	Defending      string `xml:"defending,attr"`
-	Physicality    string `xml:"physicality,attr"`
-	Acceleration   string `xml:"acceleration,attr"`
-	Sprint         string `xml:"sprint,attr"`
-	Positioning    string `xml:"positioning,attr"`
-	Finishing      string `xml:"finishing,attr"`
-	Shot           string `xml:"shot,attr"`
-	Long           string `xml:"long,attr"`
-	Volleys        string `xml:"volleys,attr"`
-	Penalties      string `xml:"penalties,attr"`
-	Vision         string `xml:"vision,attr"`
-	Crossing       string `xml:"crossing,attr"`
-	Free           string `xml:"free,attr"`
-	Curve          string `xml:"curve,attr"`
-	Agility        string `xml:"agility,attr"`
-	Balance        string `xml:"balance,attr"`
-	Reactions      string `xml:"reactions,attr"`
-	Ball           string `xml:"ball,attr"`
-	Composure      string `xml:"composure,attr"`
-	Interceptions  string `xml:"interceptions,attr"`
-	Heading        string `xml:"heading,attr"`
-	Defense        string `xml:"defense,attr"`
-	Standing       string `xml:"standing,attr"`
-	Sliding        string `xml:"sliding,attr"`
-	Jumping        string `xml:"jumping,attr"`
-	Stamina        string `xml:"stamina,attr"`
-	Strength       string `xml:"strength,attr"`
-	Aggression     string `xml:"aggression,attr"`
+	Overall        int `xml:"overall,attr"`
+	Pace           int `xml:"pace,attr"`
+	Shooting       int `xml:"shooting,attr"`
+	Passing        int `xml:"passing,attr"`
+	Dribbling      int `xml:"dribbling,attr"`
+	Defending      int `xml:"defending,attr"`
+	Physicality    int `xml:"physicality,attr"`
+	Acceleration   int `xml:"acceleration,attr"`
+	Sprint         int `xml:"sprint,attr"`
+	Positioning    int `xml:"positioning,attr"`
+	Finishing      int `xml:"finishing,attr"`
+	Shot           int `xml:"shot,attr"`
+	Long           int `xml:"long,attr"`
+	Volleys        int `xml:"volleys,attr"`
+	Penalties      int `xml:"penalties,attr"`
+	Vision         int `xml:"vision,attr"`
+	Crossing       int `xml:"crossing,attr"`
+	Free           int `xml:"free,attr"`
+	Curve          int `xml:"curve,attr"`
+	Agility        int `xml:"agility,attr"`
+	Balance        int `xml:"balance,attr"`
+	Reactions      int `xml:"reactions,attr"`
+	Ball           int `xml:"ball,attr"`
+	Composure      int `xml:"composure,attr"`
+	Interceptions  int `xml:"interceptions,attr"`
+	Heading        int `xml:"heading,attr"`
+	Def        	   int `xml:"defense,attr"`
+	Standing       int `xml:"standing,attr"`
+	Sliding        int `xml:"sliding,attr"`
+	Jumping        int `xml:"jumping,attr"`
+	Stamina        int `xml:"stamina,attr"`
+	Strength       int `xml:"strength,attr"`
+	Aggression     int `xml:"aggression,attr"`
 	AttWorkRate    string `xml:"att_work_rate,attr"`
 	DefWorkRate    string `xml:"def_work_rate,attr"`
 	PreferredFoot  string `xml:"preferred_foot,attr"`
-	WeakFoot       string `xml:"weak_foot,attr"`
-	SkillMoves     string `xml:"skill_moves,attr"`
+	WeakFoot       int `xml:"weak_foot,attr"`
+	SkillMoves     int `xml:"skill_moves,attr"`
 	URL            string `xml:"url,attr"`
 	Gender         string `xml:"gender,attr"`
-	GK             string `xml:"gk,attr"`
+	GK             float64  `xml:"gk,attr"`
 }
+
 
 type Nation struct {
 	Name        string   `xml:"name,attr"`
@@ -64,18 +76,11 @@ type Club struct {
 }
 
 
+type Football struct {
+	Clubs []Club `xml:"Clubs>Club"`
+}
 
 
-
-import (
-	"database/sql"
-	"fmt"
-	"log"
-	"time"
-
-	"github.com/streadway/amqp"
-	_ "github.com/lib/pq"
-)
 
 const (
 	dbUser      = "is"
@@ -103,7 +108,7 @@ func connectDB() *sql.DB {
 	return db
 }
 
-func sendToBroker(fileName string, taskType string) {
+func sendToBroker(jsonfile string, taskType string) {
 	conn, err := amqp.Dial(rabbitMQURL)
 	if err != nil {
 		log.Fatalf("Erro ao se conectar ao RabbitMQ: %s", err)
@@ -128,7 +133,7 @@ func sendToBroker(fileName string, taskType string) {
 		log.Fatalf("Erro ao declarar a fila: %s", err)
 	}
 
-	body := fmt.Sprintf("Tarefa para o arquivo: %s, Tipo: %s", fileName, taskType)
+	body := fmt.Sprintf(jsonfile)
 	err = ch.Publish(
 		"",
 		q.Name,
@@ -144,6 +149,106 @@ func sendToBroker(fileName string, taskType string) {
 	}
 
 	fmt.Println("Mensagem enviada para o RabbitMQ com sucesso!")
+}
+
+
+func generateJSONFromPlayer(player Player, countryName string) ([]byte, error) {
+	gkInt := int(player.GK)
+
+	playerData := map[string]interface{}{
+		"id_nation":  countryName,
+		"id":            player.ID,
+		"name":          player.Name,
+		"age":           player.Age,
+		"id_club":       player.Club,
+		"position":      player.Position,
+		"overall":       player.Overall,
+		"pace":          player.Pace,
+		"shooting":      player.Shooting,
+		"passing":       player.Passing,
+		"dribbling":     player.Dribbling,
+		"defending":     player.Defending,
+		"physicality":   player.Physicality,
+		"acceleration":  player.Acceleration,
+		"sprint":        player.Sprint,
+		"positioning":   player.Positioning,
+		"finishing":     player.Finishing,
+		"shot":          player.Shot,
+		"long":          player.Long,
+		"volleys":       player.Volleys,
+		"penalties":     player.Penalties,
+		"vision":        player.Vision,
+		"crossing":      player.Crossing,
+		"free":          player.Free,
+		"curve":         player.Curve,
+		"agility":       player.Agility,
+		"balance":       player.Balance,
+		"reactions":     player.Reactions,
+		"ball":          player.Ball,
+		"composure":     player.Composure,
+		"interceptions": player.Interceptions,
+		"heading":       player.Heading,
+		"def":       	 player.Def,
+		"standing":      player.Standing,
+		"sliding":       player.Sliding,
+		"jumping":       player.Jumping,
+		"stamina":       player.Stamina,
+		"strength":      player.Strength,
+		"aggression":    player.Aggression,
+		"att_work_rate": player.AttWorkRate,
+		"def_work_rate": player.DefWorkRate,
+		"preferred_foot": player.PreferredFoot,
+		"weak_foot":      player.WeakFoot,
+		"skill_moves":    player.SkillMoves,
+		"url":            player.URL,
+		"gender":         player.Gender,
+		"gk": 			  gkInt,
+	}
+
+	
+
+	jsonData, err := json.Marshal(playerData)
+	if err != nil {
+		return nil, fmt.Errorf("Error encoding JSON: %v", err)
+	}
+
+	return jsonData, nil
+}
+
+func readXMLAndSendToBroker(filename string) {
+	xmlData, err := ioutil.ReadFile(filename)
+	if err != nil {
+		log.Println("Error reading XML file:", err)
+		return
+	}
+
+	var football Football
+	err = xml.Unmarshal(xmlData, &football)
+	if err != nil {
+		log.Println("Error decoding XML:", err)
+		return
+	}
+
+	taskType := "newEntity"
+
+	for _, club := range football.Clubs {
+		for _, nation := range club.Nations {
+			countryName := nation.Name
+			for _, player := range nation.Players {
+				jsonData, err := generateJSONFromPlayer(player, countryName)
+				if err != nil {
+					log.Println(err)
+					continue
+				}
+
+				// Converta jsonData para uma string
+				jsonString := string(jsonData)
+
+				// Envia a mensagem para o RabbitMQ
+				sendToBroker(jsonString, taskType)
+			}
+		}
+	}
 }
 
 
@@ -172,7 +277,7 @@ func checkNewXMLFilesEvery60Seconds(db *sql.DB) {
 			}
 
 			for rows.Next() {
-				var fileName string
+				var fileName string 
 				var createdOn time.Time
 				err := rows.Scan(&fileName, &createdOn)
 				if err != nil {
@@ -182,8 +287,8 @@ func checkNewXMLFilesEvery60Seconds(db *sql.DB) {
 				fmt.Printf("Novo arquivo XML encontrado: Nome do arquivo: %s, Criado em: %s\n", fileName, createdOn)
 				
 				//ver as entitys e criar uma task e fazer um json com a devida informaçao
-
-				sendToBroker(fileName, task)
+				
+				readXMLAndSendToBroker(fileName)			
 			}
 
 			if err := rows.Err(); err != nil {

@@ -19,7 +19,7 @@ import (
 
 const (
 	rabbitMQURL = "amqp://is:is@rabbitmq:5672/is"
-	queueName   = "tasks"
+	queueName   = "new_entity"
 	apiURL      = "http://api-entities/players"
 
 	dbUser     = "is"

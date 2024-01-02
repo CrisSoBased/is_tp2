@@ -2,80 +2,67 @@ package main
 
 import (
 	"database/sql"
+	"encoding/json"
+	"encoding/xml"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"time"
-	"io/ioutil"
-	"encoding/json"
-	"encoding/xml"     
 
 	"github.com/streadway/amqp"
 	_ "github.com/lib/pq"
 )
 
-const (
-	dbUser      = "is"
-	dbPassword  = "is"
-	dbName      = "is"
-	dbHost      = "db-xml"
-	rabbitMQURL = "amqp://is:is@rabbitmq:5672/is"
-	queueName   = "tasks"
-)
-
-
 type Player struct {
 	ID             string `xml:"id,attr"`
 	Name           string `xml:"name,attr"`
-	Age            string `xml:"age,attr"`
+	Age            int `xml:"age,attr"`
 	CountryRef     string `xml:"country_ref,attr"`
 	Club           string `xml:"club,attr"`
 	Position       string `xml:"position,attr"`
-	Overall        string `xml:"overall,attr"`
-	Pace           string `xml:"pace,attr"`
-	Shooting       string `xml:"shooting,attr"`
-	Passing        string `xml:"passing,attr"`
-	Dribbling      string `xml:"dribbling,attr"`
-	Defending      string `xml:"defending,attr"`
-	Physicality    string `xml:"physicality,attr"`
-	Acceleration   string `xml:"acceleration,attr"`
-	Sprint         string `xml:"sprint,attr"`
-	Positioning    string `xml:"positioning,attr"`
-	Finishing      string `xml:"finishing,attr"`
-	Shot           string `xml:"shot,attr"`
-	Long           string `xml:"long,attr"`
-	Volleys        string `xml:"volleys,attr"`
-	Penalties      string `xml:"penalties,attr"`
-	Vision         string `xml:"vision,attr"`
-	Crossing       string `xml:"crossing,attr"`
-	Free           string `xml:"free,attr"`
-	Curve          string `xml:"curve,attr"`
-	Agility        string `xml:"agility,attr"`
-	Balance        string `xml:"balance,attr"`
-	Reactions      string `xml:"reactions,attr"`
-	Ball           string `xml:"ball,attr"`
-	Composure      string `xml:"composure,attr"`
-	Interceptions  string `xml:"interceptions,attr"`
-	Heading        string `xml:"heading,attr"`
-	Defense        string `xml:"defense,attr"`
-	Standing       string `xml:"standing,attr"`
-	Sliding        string `xml:"sliding,attr"`
-	Jumping        string `xml:"jumping,attr"`
-	Stamina        string `xml:"stamina,attr"`
-	Strength       string `xml:"strength,attr"`
-	Aggression     string `xml:"aggression,attr"`
+	Overall        int `xml:"overall,attr"`
+	Pace           int `xml:"pace,attr"`
+	Shooting       int `xml:"shooting,attr"`
+	Passing        int `xml:"passing,attr"`
+	Dribbling      int `xml:"dribbling,attr"`
+	Defending      int `xml:"defending,attr"`
+	Physicality    int `xml:"physicality,attr"`
+	Acceleration   int `xml:"acceleration,attr"`
+	Sprint         int `xml:"sprint,attr"`
+	Positioning    int `xml:"positioning,attr"`
+	Finishing      int `xml:"finishing,attr"`
+	Shot           int `xml:"shot,attr"`
+	Long           int `xml:"long,attr"`
+	Volleys        int `xml:"volleys,attr"`
+	Penalties      int `xml:"penalties,attr"`
+	Vision         int `xml:"vision,attr"`
+	Crossing       int `xml:"crossing,attr"`
+	Free           int `xml:"free,attr"`
+	Curve          int `xml:"curve,attr"`
+	Agility        int `xml:"agility,attr"`
+	Balance        int `xml:"balance,attr"`
+	Reactions      int `xml:"reactions,attr"`
+	Ball           int `xml:"ball,attr"`
+	Composure      int `xml:"composure,attr"`
+	Interceptions  int `xml:"interceptions,attr"`
+	Heading        int `xml:"heading,attr"`
+	Def        	   int `xml:"defense,attr"`
+	Standing       int `xml:"standing,attr"`
+	Sliding        int `xml:"sliding,attr"`
+	Jumping        int `xml:"jumping,attr"`
+	Stamina        int `xml:"stamina,attr"`
+	Strength       int `xml:"strength,attr"`
+	Aggression     int `xml:"aggression,attr"`
 	AttWorkRate    string `xml:"att_work_rate,attr"`
 	DefWorkRate    string `xml:"def_work_rate,attr"`
 	PreferredFoot  string `xml:"preferred_foot,attr"`
-	WeakFoot       string `xml:"weak_foot,attr"`
-	SkillMoves     string `xml:"skill_moves,attr"`
+	WeakFoot       int `xml:"weak_foot,attr"`
+	SkillMoves     int `xml:"skill_moves,attr"`
 	URL            string `xml:"url,attr"`
 	Gender         string `xml:"gender,attr"`
-	GK             string `xml:"gk,attr"`
+	GK             float64  `xml:"gk,attr"`
 }
 
-type Football struct {
-	Clubs []Club `xml:"Clubs>Club"`
-}
 
 type Nation struct {
 	Name        string   `xml:"name,attr"`
@@ -87,6 +74,23 @@ type Club struct {
 	Name    string  `xml:"name,attr"`
 	Nations []Nation `xml:"Nations>Nation"`
 }
+
+
+type Football struct {
+	Clubs []Club `xml:"Clubs>Club"`
+}
+
+
+
+const (
+	dbUser      = "is"
+	dbPassword  = "is"
+	dbName      = "is"
+	dbHost      = "db-xml"
+	rabbitMQURL = "amqp://is:is@rabbitmq:5672/is"
+	queueName   = "new_entity"
+	updateQueueName = "update_coor"
+)
 
 func connectDB() *sql.DB {
 	connStr := fmt.Sprintf("user=%s password=%s dbname=%s host=%s sslmode=disable",
@@ -105,7 +109,7 @@ func connectDB() *sql.DB {
 	return db
 }
 
-func sendToBroker(jsonfile string, taskType string) {
+func sendToBroker(jsonfile string, taskType string, queueName string) {
 	conn, err := amqp.Dial(rabbitMQURL)
 	if err != nil {
 		log.Fatalf("Erro ao se conectar ao RabbitMQ: %s", err)
@@ -130,7 +134,7 @@ func sendToBroker(jsonfile string, taskType string) {
 		log.Fatalf("Erro ao declarar a fila: %s", err)
 	}
 
-	body := fmt.Sprintf("Tarefa para o arquivo: %s, Tipo: %s", jsonfile, taskType)
+	body := fmt.Sprintf(jsonfile)
 	err = ch.Publish(
 		"",
 		q.Name,
@@ -145,18 +149,31 @@ func sendToBroker(jsonfile string, taskType string) {
 		log.Fatalf("Erro ao publicar a mensagem: %s", err)
 	}
 
-	fmt.Println("Mensagem enviada para o RabbitMQ com sucesso!")
+	fmt.Printf("Mensagem enviada para a fila '%s' do RabbitMQ com sucesso!\n", queueName)
 }
 
+func createJSONWithIDNation(countryName string) (string, error) {
+	// Criar um mapa para representar a estrutura do JSON desejado
+	data := map[string]string{"id_nation": countryName}
+
+	// Codificar o mapa para JSON
+	jsonData, err := json.Marshal(data)
+	if err != nil {
+		return "", fmt.Errorf("Erro ao codificar JSON com id_nation: %v", err)
+	}
+
+	return string(jsonData), nil
+}
 
 func generateJSONFromPlayer(player Player, countryName string) ([]byte, error) {
-	
+	gkInt := int(player.GK)
+
 	playerData := map[string]interface{}{
-		"country_name":  countryName,
+		"id_nation":  countryName,
 		"id":            player.ID,
 		"name":          player.Name,
 		"age":           player.Age,
-		"club":          player.Club,
+		"id_club":       player.Club,
 		"position":      player.Position,
 		"overall":       player.Overall,
 		"pace":          player.Pace,
@@ -184,7 +201,7 @@ func generateJSONFromPlayer(player Player, countryName string) ([]byte, error) {
 		"composure":     player.Composure,
 		"interceptions": player.Interceptions,
 		"heading":       player.Heading,
-		"defense":       player.Defense,
+		"def":       	 player.Def,
 		"standing":      player.Standing,
 		"sliding":       player.Sliding,
 		"jumping":       player.Jumping,
@@ -198,8 +215,10 @@ func generateJSONFromPlayer(player Player, countryName string) ([]byte, error) {
 		"skill_moves":    player.SkillMoves,
 		"url":            player.URL,
 		"gender":         player.Gender,
-		"gk":             player.GK,
+		"gk": 			  gkInt,
 	}
+
+	
 
 	jsonData, err := json.Marshal(playerData)
 	if err != nil {
@@ -224,10 +243,18 @@ func readXMLAndSendToBroker(filename string) {
 	}
 
 	taskType := "newEntity"
-
+	taskTyped := "updategis"
 	for _, club := range football.Clubs {
 		for _, nation := range club.Nations {
 			countryName := nation.Name
+			jsonWithIDNation, err := createJSONWithIDNation(countryName)
+			if err != nil {
+				fmt.Println("Erro:", err)
+				return
+			}
+			
+			jsonnationstrin := string(jsonWithIDNation)
+			
 			for _, player := range nation.Players {
 				jsonData, err := generateJSONFromPlayer(player, countryName)
 				if err != nil {
@@ -235,8 +262,12 @@ func readXMLAndSendToBroker(filename string) {
 					continue
 				}
 
+				// Converta jsonData para uma string
+				jsonString := string(jsonData)
+
 				// Envia a mensagem para o RabbitMQ
-				sendToBroker(string(jsonData), taskType)
+				sendToBroker(jsonString, taskType, queueName)
+				sendToBroker(jsonnationstrin, taskTyped, updateQueueName)
 			}
 		}
 	}

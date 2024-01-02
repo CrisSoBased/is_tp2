@@ -27,7 +27,7 @@ class Club:
         return el
 
     def __str__(self):
-        return f"{self._name} ({self._id})"
+        return f"{self._name}"
 
 
 Club.counter = 0

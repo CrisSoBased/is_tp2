@@ -7,17 +7,30 @@ from watchdog.events import FileSystemEventHandler, FileCreatedEvent
 from utils.db_access import DBAccess
 from utils.csv_to_xml_converter import CSVtoXMLConverter
 
+
+
+
 CSV_INPUT_PATH = "/csv"
 XML_OUTPUT_PATH = "/xml"
+NUM_XML_PARTS = int(os.environ['NUM_XML_PARTS'])
+
+
+
 
 def get_csv_files_in_input_folder():
     return [os.path.join(dp, f) for dp, dn, filenames in os.walk(CSV_INPUT_PATH) for f in filenames if
             os.path.splitext(f)[1] == '.csv']
 
+
+
+
 def generate_unique_file_name(directory):
     j = f"{directory}/{str(uuid.uuid4())}.xml"
     j = re.sub(r'/xml\d+/', '/xml/', j)
     return j
+
+
+
 
 def convert_csv_to_xml(in_path, out_path, i):
     converter = CSVtoXMLConverter(in_path, i)
@@ -36,7 +49,7 @@ class CSVHandler(FileSystemEventHandler):
         print(f"Novo arquivo CSV detectado: '{csv_path}'")
         file_size = Path(csv_path).stat().st_size
 
-        for i in range(10):
+        for i in range(NUM_XML_PARTS):
             name = f"{self._output_path}{str(i)}"
             print(f"Novo nome : '{name}'")
             xml_path = generate_unique_file_name(name)
@@ -46,7 +59,7 @@ class CSVHandler(FileSystemEventHandler):
             db_access = DBAccess()
             db_access.convert_document(csv_path, xml_path, file_size)
 
-            with open(xml_path, encoding='latin-1') as file:
+            with open(xml_path, encoding='utf-8') as file:
                 data = file.read()
 
             db_access.import_xml_document(xml_path, data)
@@ -65,6 +78,7 @@ def scan_existing_files(csv_handler):
         csv_handler.convert_csv(file)
 
 def main():
+
     csv_handler = CSVHandler(CSV_INPUT_PATH, XML_OUTPUT_PATH)
 
     # Executa a verificação de arquivos existentes antes de iniciar o loop

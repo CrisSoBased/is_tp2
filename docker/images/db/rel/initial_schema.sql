@@ -5,7 +5,7 @@ CREATE EXTENSION IF NOT EXISTS postgis;
 -- Tabela para as Nações
 CREATE TABLE public.Nation (
     id          uuid PRIMARY KEY DEFAULT uuid_generate_v5(uuid_ns_dns(), 'nation'),
-    name        VARCHAR(255) NOT NULL,
+    name        VARCHAR(255) NOT NULL UNIQUE,
     coordinates GEOMETRY(Point, 4326), -- Coordenadas geográficas (latitude e longitude)
     created_on  TIMESTAMP NOT NULL DEFAULT NOW(),
     updated_on  TIMESTAMP NOT NULL DEFAULT NOW()
@@ -14,7 +14,7 @@ CREATE TABLE public.Nation (
 -- Tabela para os Clubes
 CREATE TABLE public.Club (
     id          uuid PRIMARY KEY DEFAULT uuid_generate_v5(uuid_ns_dns(), 'club'),
-    name        VARCHAR(255) NOT NULL,
+    name        VARCHAR(255) NOT NULL UNIQUE,
     created_on  TIMESTAMP NOT NULL DEFAULT NOW(),
     updated_on  TIMESTAMP NOT NULL DEFAULT NOW()
 );
@@ -22,7 +22,7 @@ CREATE TABLE public.Club (
 -- Tabela para os Jogadores
 CREATE TABLE public.Player (
     id              uuid PRIMARY KEY DEFAULT uuid_generate_v5(uuid_ns_dns(), 'player'),
-    name            VARCHAR(255) NOT NULL,
+    name            VARCHAR(255) NOT NULL UNIQUE,
     age             INTEGER NOT NULL,
     overall         INTEGER NOT NULL,
     position        VARCHAR(50) NOT NULL,

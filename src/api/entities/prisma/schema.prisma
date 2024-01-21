@@ -76,11 +76,11 @@ model player {
   skill_moves       Int
   url               String
   gender            String
-  gk                Int?
+  gk                Int
   nation            nation?     @relation(fields: [id_nation], references: [id])
-  id_nation         String?
+  id_nation         String?     @db.Uuid  
   club              club?       @relation(fields: [id_club], references: [id])
-  id_club           String?
+  id_club           String?     @db.Uuid
   created_on        DateTime    @default(now())
   updated_on        DateTime    @default(now())
 }

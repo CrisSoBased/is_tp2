@@ -12,33 +12,6 @@ POLLING_FREQ = int(sys.argv[1]) if len(sys.argv) >= 2 else 60
 ENTITIES_PER_ITERATION = int(sys.argv[2]) if len(sys.argv) >= 3 else 10
 
 
-def get_data(nation):
-        if nation.lower() == 'korea dpr':
-            return [0, 0]  # Retorna coordenadas padrão para Korea
-        else:
-            location = nation
-            # Remova a barra do final da URL
-            url = 'https://nominatim.openstreetmap.org/search?q=' + urllib.parse.quote(location) + '&format=json'
-
-            try:
-                response = requests.get(url)
-                response.raise_for_status()  #   Verifica se a resposta da solicitação foi bem-sucedida
-
-                geolocation = response.json()
-
-                if geolocation:
-                    return [
-                        geolocation[0]['lat'],
-                        geolocation[0]['lon']
-                    ]
-                
-                else:
-                    print(f"Geolocalização não encontrada para {nation}")
-                    return [0, 0]  # Retornar coordenadas padrão ou outra abordagem que fizer sentido
-
-            except requests.exceptions.RequestException as e:
-                print(f"Erro na solicitação de geolocalização: {e}")
-                return [0, 0]  # Retornar coordenadas padrão ou outra abordagem que fizer sentido
 
 
 
@@ -62,6 +35,9 @@ def testapi():
 MAX_RETRIES = 5
 
 def callback(ch, method, properties, body):
+    
+    
+    
     try:
         json_data = json.loads(body.decode('utf-8'))
         print(f"Received message: {json_data}")

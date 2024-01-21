@@ -62,7 +62,7 @@ class Player:
         el.set("id", str(self._id))
         el.set("name", self._name)
         el.set("age", str(self._age))
-        el.set("country_ref", str(self._country.get_id()))  # Assuming get_id returns the country ID
+        el.set("country_ref", str(self._country.get_name()))  # Assuming get_id returns the country ID
         el.set("club", str(self._club))  # Convert club to string if necessary
         el.set("position", str(self._position))  # Convert position to string if necessary
 

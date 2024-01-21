@@ -1,5 +1,8 @@
 from csv import DictReader
 import pandas as pd
+import os
+
+NUM_XML_PARTS = int(os.environ['NUM_XML_PARTS'])
 
 class CSVReader:
 
@@ -10,15 +13,15 @@ class CSVReader:
 
     def read_and_split_csv(self):
         df = pd.read_csv(self._path)
-        rows_per_part = len(df) // 10
+        rows_per_part = len(df) // NUM_XML_PARTS
 
         csv_data = None
 
-        for i in range(10):
+        for i in range(NUM_XML_PARTS):
             start_idx = i * rows_per_part
             end_idx = start_idx + rows_per_part
             
-            if i == 10 - 1:
+            if i == NUM_XML_PARTS - 1:
                 part_df = df.iloc[start_idx:]
             else:
                 part_df = df.iloc[start_idx:end_idx]
